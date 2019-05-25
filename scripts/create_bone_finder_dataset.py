@@ -9,6 +9,7 @@ import zipfile
 from joblib import Parallel, delayed
 import shutil
 from kneelandmarks.data.utils import read_dicom, process_xray, read_pts, read_sas7bdata_pd
+from kneelandmarks.evaluation import visualize_landmarks
 cv2.ocl.setUseOpenCL(False)
 
 
@@ -17,7 +18,6 @@ def worker(data_entry, args):
 
     info = []
     pad = args.pad
-    scale_spacing = args.scale_spacing
     sizemm = args.sizemm
 
     dicom_name = os.path.join(args.oai_data_dir, 'OAI_00m', folder, '001')
@@ -29,13 +29,17 @@ def worker(data_entry, args):
     res = read_dicom(dicom_name)
     if res is None:
         return info
-    img, spacing = res
-    img = process_xray(img).astype(np.uint8)
+    img, spacing, _ = res
+    img_original = process_xray(img).astype(np.uint8)
+    if img_original.shape[0] == 0 or img_original.shape[1] == 0:
+        return info
+    scale = spacing / args.high_cost_spacing
+    scale_lc = spacing / args.low_cost_spacing
+    spacing = args.high_cost_spacing
 
-    scale = spacing / scale_spacing
-    spacing = scale_spacing
     bbox_width_pix = int(sizemm / spacing)
-    img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
+    img = cv2.resize(img_original, (int(img_original.shape[1] * scale), int(img_original.shape[0] * scale)))
+    img_lc = cv2.resize(img_original, (int(img_original.shape[1] * scale_lc), int(img_original.shape[0] * scale_lc)))
 
     row, col = img.shape
     tmp = np.zeros((row + 2 * pad, col + 2 * pad))
@@ -44,22 +48,24 @@ def worker(data_entry, args):
     row, col = img.shape
 
     points = np.round(read_pts(os.path.join(landmarks_dir, '001.pts')) * 1 / spacing) + pad
-    landmarks_fl = points[12:25, :]
-    landmarks_tl = points[47:64, :]
+    landmarks_fl = points[[8, ]+list(range(12, 25, 2))+[28, ], :]
+    landmarks_tl = points[[45, ]+list(range(47, 64, 2))+[65, ], :]
 
     points = np.round(read_pts(os.path.join(landmarks_dir, '001_f.pts')) * 1 / spacing) + pad
-    landmarks_fr = points[12:25, :]
-    landmarks_tr = points[47:64, :]
+    landmarks_fr = points[[8, ]+list(range(12, 25, 2))+[28, ], :]
+    landmarks_tr = points[[45, ]+list(range(47, 64, 2))+[65, ], :]
 
     landmarks_fr[:, 0] = col - landmarks_fr[:, 0]
     landmarks_tr[:, 0] = col - landmarks_tr[:, 0]
 
-    landmarks = {'TR': landmarks_tr, 'FR': landmarks_fr, 'TL': landmarks_tl, 'FL': landmarks_fl}
+    landmarks = {'TR': landmarks_tr, 'FR': landmarks_fr,
+                 'TL': landmarks_tl, 'FL': landmarks_fl}
 
     # Low-cost annotations in
     # padded image coordinate system
     lcx, lcy = landmarks['TL'][landmarks['TL'].shape[0] // 2, :].astype(int)
     rcx, rcy = landmarks['TR'][landmarks['TR'].shape[0] // 2, :].astype(int)
+    centers = {'L': (lcx, lcy), 'R': (rcx, rcy)}
 
     # Defining the bounding boxes for the cropped images
     bbox_r = [rcx - bbox_width_pix // 2, rcy - bbox_width_pix // 2,
@@ -87,10 +93,16 @@ def worker(data_entry, args):
     landmarks[f'F{side}'] = np.round(landmarks[f'F{side}']).astype(int)
 
     cv2.imwrite(os.path.join(args.to_save_high_cost_img, f'{subject_id}_{kl}_{side}.png'), localized_img)
+    if not os.path.isfile(os.path.join(args.to_save_low_cost_img, f'{subject_id}.png')):
+        cv2.imwrite(os.path.join(args.to_save_low_cost_img, f'{subject_id}.png'), img_lc)
+
     tibial_landmarks = ''.join(map(lambda x: '{},{},'.format(*x), landmarks[f'T{side}']))[:-1]
     femoral_landmarks = ''.join(map(lambda x: '{},{},'.format(*x), landmarks[f'F{side}']))[:-1]
 
-    return [subject_id, side, folder, kl, tibial_landmarks, femoral_landmarks, bboxes[side]]
+    return [subject_id, side, folder, kl,
+            tibial_landmarks, femoral_landmarks,
+            f"{bboxes[side][0]},{bboxes[side][1]},{bboxes[side][2]},{bboxes[side][3]}",
+            f"{centers[side][0]},{centers[side][1]}"]
 
 
 if __name__ == "__main__":
@@ -101,10 +113,11 @@ if __name__ == "__main__":
     parser.add_argument('--pad', default=100)
     parser.add_argument('--to_save_low_cost_img', default='/media/lext/FAST/knee_landmarks/workdir/low_cost_data')
     parser.add_argument('--to_save_high_cost_img', default='/media/lext/FAST/knee_landmarks/workdir/high_cost_data')
-    parser.add_argument('--to_save_low_cost_meta', default='train_landmarks_bf_full.csv')
-    parser.add_argument('--to_save_high_cost_meta', default='train_landmarks_bf_full.csv')
-    parser.add_argument('--scale_spacing', type=float, default=0.3)
-    parser.add_argument('--n_per_grade', type=int, default=100)
+    parser.add_argument('--to_save_meta', default='/media/lext/FAST/knee_landmarks/workdir/')
+    parser.add_argument('--high_cost_spacing', type=float, default=0.3)
+    parser.add_argument('--low_cost_spacing', type=int, default=2)
+    parser.add_argument('--n_per_grade', type=int, default=150)
+    parser.add_argument('--num_threads', type=int, default=30)
     parser.add_argument('--seed', type=int, default=123456)
     parser.add_argument('--sizemm', type=int, default=140)
     args = parser.parse_args()
@@ -163,19 +176,11 @@ if __name__ == "__main__":
         to_process.extend(right)
 
     info = []
-    #res = Parallel(20)(delayed(worker)(data_entry, args) for data_entry in to_process)
-    #for r in tqdm(res, total=len(res)):
-    #    info.append(r)
-    for entry in to_process:
-        worker(entry, args)
-    """
-    for dataset_folder in data:
-        analyzed = os.listdir(os.path.join('results/', dataset_folder))
-        dataset = data[dataset_folder]
+    res = Parallel(args.num_threads)(delayed(worker)(data_entry, args) for data_entry in tqdm(to_process,
+                                                                                              total=len(to_process)))
+    for r in res:
+        info.append(r)
 
-
-    df = pd.DataFrame(data=info, columns=['img_id', 'Side', 'T', 'F'])
-    df.to_csv(args.to_save_landmarks, index=False)
-
-    shutil.rmtree('results/')
-    """
+    df = pd.DataFrame(data=info, columns=['subject_id', 'side', 'folder', 'kl', 'tibia', 'femur', 'bbox', 'center'])
+    df.to_csv(os.path.join(args.to_save_meta,
+                           f'bf_landmarks_{args.low_cost_spacing}_{args.high_cost_spacing}.csv'), index=False)

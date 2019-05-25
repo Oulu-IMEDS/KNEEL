@@ -12,23 +12,49 @@ def read_pts(fname):
 
 
 def read_dicom(filename):
-    # This fucntion tries to read the dicom file
+    """
+    Reads a dicom file
+    Parameters
+    ----------
+    filename : str
+        Full path to the image
+    Returns
+    -------
+    out : tuple
+        Image itself as uint16, spacing, and the DICOM metadata
+    """
 
-    # try:
-    data = dicom.read_file(filename)
+    try:
+        data = dicom.read_file(filename)
+    except:
+        return None
     img = np.frombuffer(data.PixelData, dtype=np.uint16).copy().astype(np.float64)
 
     if data.PhotometricInterpretation == 'MONOCHROME1':
         img = img.max() - img
-
-    img = img.reshape((data.Rows, data.Columns))
+    try:
+        img = img.reshape((data.Rows, data.Columns))
+    except:
+        return None
 
     try:
-        return img, float(data.ImagerPixelSpacing[0])
+        if isinstance(data.ImagerPixelSpacing, str):
+            data.ImagerPixelSpacing = data.ImagerPixelSpacing.split()
+    except:
+        pass
+
+    try:
+        if isinstance(data.PixelSpacing, str):
+            data.PixelSpacing = data.PixelSpacing.split()
+    except:
+        pass
+
+    try:
+        return img, float(data.ImagerPixelSpacing[0]), data
     except:
         pass
     try:
-        return img, float(data.PixelSpacing[0])
+        return img, float(data.PixelSpacing[0]), data
     except:
         return None
 
