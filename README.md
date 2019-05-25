@@ -1,2 +1,2 @@
 # KneeLandmarksSSL
-Semi-Supervised Learning for Knee Anatomical Landmark Localization
+Semi-Supervised Learning and Binary Networks for Knee Anatomical Landmark Localization
