@@ -1,5 +1,6 @@
 from torch import nn
 
+
 def conv_block_3x3(inp, out, activation):
     """
     3x3 ConvNet building block

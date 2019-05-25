@@ -62,7 +62,7 @@ class HourglassNet(nn.Module):
 
         self.out1 = nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0)
 
-        # to match the concatentation from first pooling and the first
+        # to match the concatenation after the first pooling and the first
         # set of predictions
 
         self.remap1 = nn.Conv2d(n_outputs, bw * 2 + bw * 4, kernel_size=1, padding=0)
@@ -78,7 +78,7 @@ class HourglassNet(nn.Module):
         # Compressing the input
         o_1 = self.conv1(x)
         o_before_mp = self.res1(o_1)
-        # o_p = F.max_pool2d(o_before_mp, 2)
+        o_p = F.max_pool2d(o_before_mp, 2)
 
         # Performing first hourglass stage
         o = self.res2(o_before_mp)
@@ -90,7 +90,7 @@ class HourglassNet(nn.Module):
         out1 = self.out1(o)
 
         # Refining the outputs
-        o = torch.cat([o, o_before_mp], 1) + self.remap1(out1)
+        o = torch.cat([o, o_p], 1) + self.remap1(out1)
         o = self.hg2(o)
         o = self.linear2(o)
         out2 = self.out2(o)
