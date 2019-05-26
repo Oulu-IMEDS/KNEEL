@@ -5,11 +5,9 @@ import pandas as pd
 import argparse
 import glob
 from tqdm import tqdm
-import zipfile
 from joblib import Parallel, delayed
-import shutil
 from kneelandmarks.data.utils import read_dicom, process_xray, read_pts, read_sas7bdata_pd
-from kneelandmarks.evaluation import visualize_landmarks
+
 cv2.ocl.setUseOpenCL(False)
 
 

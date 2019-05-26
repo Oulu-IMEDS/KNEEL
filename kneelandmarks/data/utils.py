@@ -139,14 +139,6 @@ def generate_maps(lms, shape, sigma=1.5):
     return res
 
 
-def pre_filter_landmarks(t_landmarks, f_landmarks):
-    # from all the bonefinder landmarks we select only a few relevant ones
-    t_pt1, t_pt2, t_pt3 = t_landmarks[0, :], t_landmarks[t_landmarks.shape[0] // 2, :], t_landmarks[-1, :]
-    f_pt1, f_pt2, f_pt3 = f_landmarks[0, :], f_landmarks[f_landmarks.shape[0] // 2, :], f_landmarks[-1, :]
-
-    return np.array([t_pt1, t_pt2, t_pt3]), np.array([f_pt1, f_pt2, f_pt3])
-
-
 def read_sas7bdata_pd(fname):
     data = []
     with SAS7BDAT(fname) as f:
