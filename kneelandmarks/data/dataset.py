@@ -1,9 +1,9 @@
-import torch
 from torch.utils import data
 import os
 import cv2
 import numpy as np
 from kneelandmarks.data.utils import parse_landmarks
+import solt.data as sld
 
 
 class LandmarkDataset(data.Dataset):
@@ -21,22 +21,37 @@ class LandmarkDataset(data.Dataset):
 
     def __getitem__(self, index):
         subject_id, side, folder, kl, t_lnd, f_lnd, _, center = self.split.iloc[index]
-        fname = os.path.join(self.data_root, f'{subject_id}_{kl}_{side}.png')
+        kl = int(kl)
+
+        if self.ann_type == 'hc':
+            fname = os.path.join(self.data_root, f'{subject_id}_{kl}_{side}.png')
+        else:
+            fname = os.path.join(self.data_root, f'{subject_id}.png')
 
         img = cv2.imread(fname, 0)
 
         if self.ann_type == 'hc':
-            t_lnd = parse_landmarks(t_lnd)
-            f_lnd = parse_landmarks(f_lnd)
-            img, target = self.transform((img, t_lnd, f_lnd))
+            kp_tibia = sld.KeyPoints(parse_landmarks(t_lnd), img.shape[0], img.shape[1])
+            kp_femur = sld.KeyPoints(parse_landmarks(f_lnd), img.shape[0], img.shape[1])
+            dc = sld.DataContainer((img, kp_tibia,kp_femur, kl), 'IPPL')
         else:
             center = np.array(list(map(int, center.split(',')))) * self.hc_lc_scale
-            img, target = self.transform((img, center))
+            cr = np.expand_dims(center[:2], 0)
+            cl = np.expand_dims(center[2:], 0)
+            cr = sld.KeyPoints(cr, img.shape[0], img.shape[1])
+            cl = sld.KeyPoints(cl, img.shape[0], img.shape[1])
 
-        return {'img': img, 'label': target,
+            dc = sld.DataContainer((img, cr, cl, -1), 'IPPL')
+
+        img, target_hm, target_kp, kl = self.transform(dc)
+
+        return {'img': img, 'target_hm': target_hm,
                 'subject_id': subject_id, 'kl': kl,
-                't_gt': torch.from_numpy(t_lnd).float(),
-                'f_gt': torch.from_numpy(f_lnd).float()}
+                'kp_gt': target_kp}
 
     def __len__(self):
         return self.split.shape[0]
+
+
+def init_meta():
+    pass

@@ -81,64 +81,6 @@ def parse_landmarks(txt):
     return pts.reshape(pts.shape[0] // 2, 2)
 
 
-def flip_left_landmarks(dataset_entry, imwidth):
-    """
-    Flips the BoneFinder landmarks inplace for pandas dataset entry
-
-    Parameters
-    ----------
-    dataset_entry : pd.Series
-        Row of a pandas dataframe
-    imwidth : int
-        The width of the image (whole dicom)
-
-    Returns
-    -------
-    out : pd.Series
-        Modified dataset row.
-
-    """
-    if dataset_entry.Side == 'L':
-        tibial_landamrks = dataset_entry['T']
-        femoral_landmarks = dataset_entry['F']
-
-        tibial_landmarks_arr = parse_landmarks(tibial_landamrks)
-        femoral_landmarks_array = parse_landmarks(femoral_landmarks)
-
-        tibial_landmarks_arr[:, 0] = imwidth - tibial_landmarks_arr[:, 0]
-        femoral_landmarks_array[:, 0] = imwidth - femoral_landmarks_array[:, 0]
-
-        dataset_entry['T'] = ''.join(map(lambda x: '{},{},'.format(*x), tibial_landmarks_arr))[:-1]
-        dataset_entry['F'] = ''.join(map(lambda x: '{},{},'.format(*x), femoral_landmarks_array))[:-1]
-
-    return dataset_entry
-
-
-def landmark2map(lm, shape, sigma=1.5):
-    # lm = (x,y)
-    m = np.zeros(shape, dtype=np.uint8)
-
-    if np.all(lm > 0) and lm[0] < shape[1] and lm[1] < shape[0]:
-        x, y = np.meshgrid(np.linspace(-0.5, 0.5, m.shape[1]), np.linspace(-0.5, 0.5, m.shape[0]))
-        mux = (lm[0]-m.shape[1]//2)/1./m.shape[1]
-        muy = (lm[1]-m.shape[0]//2)/1./m.shape[0]
-        s = sigma / 1. / m.shape[0]
-        m = (x-mux)**2 / 2. / s**2 + (y-muy)**2 / 2. / s**2
-        m = np.exp(-m)
-        m -= m.min()
-        m /= m.max()
-
-    return m*255
-
-
-def generate_maps(lms, shape, sigma=1.5):
-    res = []
-    for i in range(lms.shape[0]):
-        res.append(landmark2map(lms[i], shape, sigma))
-
-    return res
-
-
 def read_sas7bdata_pd(fname):
     data = []
     with SAS7BDAT(fname) as f:
