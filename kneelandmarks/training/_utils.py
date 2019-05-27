@@ -3,6 +3,7 @@ from tqdm import tqdm
 import gc
 import numpy as np
 import os
+import torch.optim.lr_scheduler as lr_scheduler
 from tensorboardX import SummaryWriter
 from termcolor import colored
 
@@ -82,9 +83,15 @@ def train_fold(net, train_loader, optimizer, criterion, val_loader, scheduler):
         scheduler.step()
 
 
-def train_n_folds(init_args, init_metadata, init_scheduler, init_augs=None,
-                  init_data_processing=None, init_loaders=None,
-                  init_model=None, init_loss=None,
+def init_scheduler(optimizer):
+    kvs = GlobalKVS()
+    return lr_scheduler.MultiStepLR(optimizer, kvs['args'].lr_drop)
+
+
+def train_n_folds(init_args, init_metadata, init_augs,
+                  init_data_processing,
+                  init_loaders,
+                  init_model, init_loss,
                   img_group_id_colname=None, img_class_colname=None):
 
     args = init_args()
@@ -106,10 +113,7 @@ def train_n_folds(init_args, init_metadata, init_scheduler, init_augs=None,
 
         net = init_model()
         optimizer = init_optimizer(net)
-        if kvs['args'].n_classes == 2:
-            criterion = init_loss()
-        else:
-            raise NotImplementedError('Loss is not defined')
+        criterion = init_loss()
         scheduler = init_scheduler(optimizer)
         train_loader, val_loader = init_loaders()
 

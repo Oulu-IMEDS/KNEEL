@@ -7,17 +7,18 @@ import solt.data as sld
 
 
 class LandmarkDataset(data.Dataset):
-    def __init__(self, data_root, split, hc_spacing, lc_spacing, transform, ann_type='hc'):
-        if self.ann_type not in ['hc', 'lc']:
+    def __init__(self, data_root, split, hc_spacing, lc_spacing, transform, ann_type='hc', image_pad=100):
+        if ann_type not in ['hc', 'lc']:
             raise ValueError('Wrong annotation type')
 
+        self.img_pad = image_pad
         self.split = split
         self.transform = transform
         self.data_root = data_root
         self.ann_type = ann_type
         self.hc_spacing = hc_spacing
         self.lc_spacing = lc_spacing
-        self.hc_lc_scale = self.lc_spacing / self.hc_spacing
+        self.hc_lc_scale = self.hc_spacing / self.lc_spacing
 
     def __getitem__(self, index):
         subject_id, side, folder, kl, t_lnd, f_lnd, _, center = self.split.iloc[index]
@@ -31,19 +32,23 @@ class LandmarkDataset(data.Dataset):
         img = cv2.imread(fname, 0)
 
         if self.ann_type == 'hc':
-            kp_tibia = sld.KeyPoints(parse_landmarks(t_lnd), img.shape[0], img.shape[1])
-            kp_femur = sld.KeyPoints(parse_landmarks(f_lnd), img.shape[0], img.shape[1])
-            dc = sld.DataContainer((img, kp_tibia,kp_femur, kl), 'IPPL')
+            lndms = np.vstack((parse_landmarks(t_lnd), parse_landmarks(f_lnd)))
+            kpts = sld.KeyPoints(lndms, img.shape[0], img.shape[1])
+            dc = sld.DataContainer((img, kpts, kl), 'IPL')
         else:
-            center = np.array(list(map(int, center.split(',')))) * self.hc_lc_scale
-            cr = np.expand_dims(center[:2], 0)
-            cl = np.expand_dims(center[2:], 0)
-            cr = sld.KeyPoints(cr, img.shape[0], img.shape[1])
-            cl = sld.KeyPoints(cl, img.shape[0], img.shape[1])
+            row, col = img.shape
+            center = np.array(list(map(int, center.split(',')))) * self.hc_lc_scale - self.hc_lc_scale * self.img_pad
+            if side == 'L':
+                img = img[:, col//2:]
+                center[0] -= col//2
+            else:
+                img = img[:, :col // 2]
 
-            dc = sld.DataContainer((img, cr, cl, -1), 'IPPL')
+            center = sld.KeyPoints(np.expand_dims(center, 0), img.shape[0], img.shape[1])
+            dc = sld.DataContainer((img, center, -1), 'IPL')
 
-        img, target_hm, target_kp, kl = self.transform(dc)
+        transform_result = self.transform(dc)
+        img, target_hm, target_kp, kl = transform_result
 
         return {'img': img, 'target_hm': target_hm,
                 'subject_id': subject_id, 'kl': kl,
@@ -51,7 +56,3 @@ class LandmarkDataset(data.Dataset):
 
     def __len__(self):
         return self.split.shape[0]
-
-
-def init_meta():
-    pass

@@ -77,7 +77,7 @@ def process_xray(img, cut_min=5, cut_max=99, multiplier=255):
 
 
 def parse_landmarks(txt):
-    pts = np.array(list(map(int, txt.values[0].split(','))))
+    pts = np.array(list(map(int, txt.split(','))))
     return pts.reshape(pts.shape[0] // 2, 2)
 
 
