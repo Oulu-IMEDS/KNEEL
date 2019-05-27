@@ -39,7 +39,7 @@ class Hourglass(nn.Module):
         o1_u = self.upper1(x)
         o2_u = self.upper2(o1_u)
         o3_u = self.upper3(o2_u)
-        return o3_u + F.upsample(self.lower5(o4), x.size()[-2:], mode=self.upmode)
+        return o3_u + F.interpolate(self.lower5(o4), x.size()[-2:], mode=self.upmode, align_corners=True)
 
 
 class HourglassNet(nn.Module):
@@ -84,7 +84,7 @@ class HourglassNet(nn.Module):
         o_p = F.max_pool2d(o_before_mp, 2)
 
         # Performing first hourglass stage
-        o = self.res2(o_before_mp)
+        o = self.res2(o_p)
         o = self.res3(o)
         o = self.res4(o)
         o = self.hg1(o)

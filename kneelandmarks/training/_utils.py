@@ -31,10 +31,10 @@ def pass_epoch(net, loader, optimizer, criterion):
                 optimizer.zero_grad()
 
             inputs = entry['img'].to(device)
-            target_hm = entry['target_hm'].to(device)
-            target_kp = entry['target_kp'].to(device)
+            target_hm = entry['target_hm'].to(device).squeeze().unsqueeze(1)
+#            target_kp = entry['target_kp'].to(device)
             outputs = net(inputs)
-            loss = criterion(outputs, target_hm, target_kp)
+            loss = criterion(outputs, target_hm)
 
             if optimizer is not None:
                 loss.backward()
@@ -60,11 +60,14 @@ def log_metrics(writer, train_loss, val_loss, val_results):
     print(colored('==> ', 'green') + 'Metrics:')
     print(colored('====> ', 'green') + 'Train loss:', train_loss)
     print(colored('====> ', 'green') + 'Val loss:', val_loss)
-    print(colored('====> ', 'green') + 'Val loss:', val_loss)
 
     to_log = {'train_loss': train_loss, 'val_loss': val_loss}
-    writer.add_scalars(f"Losses_{kvs['args'].model}", to_log, kvs['cur_epoch'])
+    val_metrics = {'epoch': kvs['cur_epoch']}
+    val_metrics.update(to_log)
+
+    writer.add_scalars(f"Losses_{kvs['args'].annotations}", to_log, kvs['cur_epoch'])
     kvs.update(f'losses_fold_[{kvs["cur_fold"]}]', to_log)
+    kvs.update(f'val_metrics_fold_[{kvs["cur_fold"]}]', val_metrics)
 
 
 def train_fold(net, train_loader, optimizer, criterion, val_loader, scheduler):
@@ -115,7 +118,7 @@ def train_n_folds(init_args, init_metadata, init_augs,
         optimizer = init_optimizer(net)
         criterion = init_loss()
         scheduler = init_scheduler(optimizer)
-        train_loader, val_loader = init_loaders()
+        train_loader, val_loader = init_loaders(x_train, x_val)
 
         train_fold(net=net, train_loader=train_loader,
                    optimizer=optimizer, criterion=criterion,

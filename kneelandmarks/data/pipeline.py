@@ -7,6 +7,7 @@ import cv2
 from functools import partial
 import os
 import pandas as pd
+from torch.utils.data import DataLoader
 
 import solt.data as sld
 import solt.core as slc
@@ -66,7 +67,9 @@ def init_data_processing():
                               split=kvs['metadata'],
                               hc_spacing=kvs['args'].hc_spacing,
                               lc_spacing=kvs['args'].lc_spacing,
-                              transform=kvs['train_trf'], ann_type=kvs['args'].annotations)
+                              transform=kvs['train_trf'],
+                              ann_type=kvs['args'].annotations,
+                              image_pad=kvs['args'].img_pad)
 
     tmp = init_mean_std(snapshots_dir=os.path.join(kvs['args'].workdir, 'snapshots'),
                         dataset=dataset,
@@ -103,8 +106,33 @@ def init_meta():
     kvs.update('metadata', metadata)
 
 
-def init_loaders():
-    raise NotImplementedError
+def init_loaders(x_train, x_val):
+    kvs = GlobalKVS()
+    train_ds = LandmarkDataset(data_root=kvs['args'].dataset_root,
+                               split=x_train,
+                               hc_spacing=kvs['args'].hc_spacing,
+                               lc_spacing=kvs['args'].lc_spacing,
+                               transform=kvs['train_trf'],
+                               ann_type=kvs['args'].annotations,
+                               image_pad=kvs['args'].img_pad)
+
+    val_ds = LandmarkDataset(data_root=kvs['args'].dataset_root,
+                             split=x_val,
+                             hc_spacing=kvs['args'].hc_spacing,
+                             lc_spacing=kvs['args'].lc_spacing,
+                             transform=kvs['train_trf'],
+                             ann_type=kvs['args'].annotations,
+                             image_pad=kvs['args'].img_pad)
+
+    train_loader = DataLoader(train_ds, batch_size=kvs['args'].bs,
+                              num_workers=kvs['args'].n_threads, shuffle=True,
+                              drop_last=True,
+                              worker_init_fn=lambda wid: np.random.seed(np.uint32(torch.initial_seed() + wid)))
+
+    val_loader = DataLoader(val_ds, batch_size=kvs['args'].val_bs,
+                            num_workers=kvs['args'].n_threads)
+
+    return train_loader, val_loader
 
 
 def l2m(lm, shape, sigma=1.5):
@@ -167,5 +195,7 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
     assert target.size(3) == img.shape[0] // downsample
     assert len(img.shape) == 3
 
-    return torch.from_numpy(img).float(), target, torch.from_numpy(landmarks.data / downsample).float(), label
+    img = torch.from_numpy(img.squeeze()).float().unsqueeze(0)
+    landmarks = torch.from_numpy(landmarks.data / downsample).float()
+    return img, target, landmarks, label
 

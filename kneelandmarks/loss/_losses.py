@@ -17,7 +17,7 @@ class HGHMLoss(nn.Module):
 
     def forward(self, preds, gt_hm):
         pred_hm_0, pred_hm_1 = preds
-        return self.hm_loss(pred_hm_0, gt_hm).mul(self.w[0]) + self.hm_loss(pred_hm_1, gt_hm).mul(self.w[1])
+        return self.hm_loss(pred_hm_0, gt_hm).mul(self.weights[0]) + self.hm_loss(pred_hm_1, gt_hm).mul(self.weights[1])
 
 
 class ElasticLoss(nn.Module):
