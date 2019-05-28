@@ -26,9 +26,13 @@ def pass_epoch(net, loader, optimizer, criterion):
                 optimizer.zero_grad()
 
             inputs = entry['img'].to(device)
-            target_hm = entry['target_hm'].to(device).squeeze().unsqueeze(1)
+            if not kvs['args'].sagm:
+                target = entry['target_hm'].to(device).squeeze().unsqueeze(1)
+            else:
+                target = entry['kp_gt'].to(device).squeeze()
+
             outputs = net(inputs)
-            loss = criterion(outputs, target_hm)
+            loss = criterion(outputs, target)
 
             if optimizer is not None:
                 loss.backward()
@@ -40,9 +44,9 @@ def pass_epoch(net, loader, optimizer, criterion):
                 running_loss += loss.item()
                 pbar.set_description(desc=f"Fold [{fold_id}] [{epoch} | {max_ep}] | Validation progress")
             if optimizer is None:
+                target_kp = entry['kp_gt'].numpy()
                 if not kvs['args'].sagm:
                     if isinstance(outputs, tuple):
-                        target_kp = entry['kp_gt'].numpy()
                         predict = outputs[-1].to('cpu').numpy()
                         xy_batch = np.zeros((predict.shape[0], 2))
                         for j in range(predict.shape[0]):
@@ -52,13 +56,26 @@ def pass_epoch(net, loader, optimizer, criterion):
                                                                     2, 0.9)
                             except IndexError:
                                 xy_batch[j] = -1
-                        spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
-                        err = np.sqrt(np.sum(((target_kp.squeeze() - xy_batch.squeeze())*spacing) ** 2, 1))
-                        landmark_errors.append(err)
                     else:
                         raise NotImplementedError
                 else:
-                    raise NotImplementedError
+                    xy_batch = outputs.to('cpu').numpy()
+
+                h, w = inputs.size(2), inputs.size(3)
+
+                target_kp = target_kp.squeeze()
+                xy_batch = xy_batch.squeeze()
+
+                target_kp[:, 0] *= w
+                xy_batch[:, 0] *= w
+
+                target_kp[:, 1] *= h
+                xy_batch[:, 1] *= h
+
+                spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
+                err = np.sqrt(np.sum(((target_kp - xy_batch) * spacing) ** 2, 1))
+                landmark_errors.append(err)
+
             pbar.update()
             gc.collect()
         gc.collect()

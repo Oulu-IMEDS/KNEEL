@@ -3,7 +3,7 @@ from torch import nn
 
 import torch.nn.functional as F
 
-from kneelandmarks.model.modules import HGResidual, conv_block_1x1
+from kneelandmarks.model.modules import HGResidual, conv_block_1x1, SoftArgmax
 
 
 class Hourglass(nn.Module):
@@ -43,7 +43,8 @@ class Hourglass(nn.Module):
 
 
 class HourglassNet(nn.Module):
-    def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4, upmode='nearest', refinement=True):
+    def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4,
+                 upmode='nearest', refinement=True, use_sagm=False):
         super(HourglassNet, self).__init__()
         self.refinement = refinement
 
@@ -52,6 +53,7 @@ class HourglassNet(nn.Module):
             nn.BatchNorm2d(bw),
             nn.ReLU(inplace=True)
         )
+
         self.res1 = HGResidual(bw, bw * 2)
         self.res2 = HGResidual(bw * 2, bw * 2)
         self.res3 = HGResidual(bw * 2, bw * 2)
@@ -77,6 +79,12 @@ class HourglassNet(nn.Module):
 
             self.out2 = nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0)
 
+        self.use_sagm = use_sagm
+        if use_sagm and refinement:
+            raise ValueError('Refinement and soft-argmax are mutually exclusive')
+
+        self.sagm = SoftArgmax(beta=1)
+
     def forward(self, x):
         # Compressing the input
         o_1 = self.conv1(x)
@@ -100,4 +108,7 @@ class HourglassNet(nn.Module):
 
             return out1, out2
         else:
-            return out1
+            if self.use_sagm:
+                return self.sagm(out1)
+            else:
+                return out1

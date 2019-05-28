@@ -50,6 +50,9 @@ class LandmarkDataset(data.Dataset):
         transform_result = self.transform(dc)
         img, target_hm, target_kp, kl = transform_result
 
+        target_kp[:, 0] /= img.size(2)
+        target_kp[:, 1] /= img.size(1)
+
         return {'img': img, 'target_hm': target_hm,
                 'subject_id': subject_id, 'kl': kl,
                 'kp_gt': target_kp}
