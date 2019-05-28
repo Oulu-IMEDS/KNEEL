@@ -1,44 +1,5 @@
 from torch import nn
-
-
-def conv_block_3x3(inp, out, activation):
-    """
-    3x3 ConvNet building block
-
-    Aleksei Tiulpin, Unversity of Oulu, 2017 (c).
-
-    """
-    if activation == 'relu':
-        return nn.Sequential(
-            nn.Conv2d(inp, out, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out),
-            nn.ReLU(inplace=True)
-        )
-    else:
-        return nn.Sequential(
-            nn.Conv2d(inp, out, kernel_size=1, padding=0),
-            nn.BatchNorm2d(out),
-        )
-
-
-def conv_block_1x1(inp, out, activation):
-    """
-    3x3 ConvNet building block
-
-    Aleksei Tiulpin, Unversity of Oulu, 2017 (c).
-
-    """
-    if activation == 'relu':
-        return nn.Sequential(
-            nn.Conv2d(inp, out, kernel_size=1, padding=0),
-            nn.BatchNorm2d(out),
-            nn.ReLU(inplace=True)
-        )
-    else:
-        return nn.Sequential(
-            nn.Conv2d(inp, out, kernel_size=1, padding=0),
-            nn.BatchNorm2d(out),
-        )
+from deeppipeline.common.modules import conv_block_1x1, conv_block_3x3
 
 
 class Identity(nn.Module):

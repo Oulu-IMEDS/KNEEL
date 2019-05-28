@@ -9,15 +9,15 @@ import os
 import pandas as pd
 from torch.utils.data import DataLoader
 
-import solt.data as sld
 import solt.core as slc
 import solt.transforms as slt
 
 from deeppipeline.kvs import GlobalKVS
-from deeppipeline.common.transforms import apply_by_index, numpy2tens
+from deeppipeline.common.transforms import apply_by_index
 from deeppipeline.common.normalization import init_mean_std, normalize_channel_wise
 
 from kneelandmarks.data.dataset import LandmarkDataset
+from kneelandmarks.data.utils import solt2torchhm
 
 
 def init_augs():
@@ -100,12 +100,6 @@ def init_data_processing():
     kvs.update('val_trf', val_trf)
 
 
-def init_meta():
-    kvs = GlobalKVS()
-    metadata = pd.read_csv(os.path.join(kvs['args'].workdir, kvs['args'].metadata))
-    kvs.update('metadata', metadata)
-
-
 def init_loaders(x_train, x_val):
     kvs = GlobalKVS()
     train_ds = LandmarkDataset(data_root=kvs['args'].dataset_root,
@@ -133,69 +127,4 @@ def init_loaders(x_train, x_val):
                             num_workers=kvs['args'].n_threads)
 
     return train_loader, val_loader
-
-
-def l2m(lm, shape, sigma=1.5):
-    # lm = (x,y)
-    m = np.zeros(shape, dtype=np.uint8)
-
-    if np.all(lm > 0) and lm[0] < shape[1] and lm[1] < shape[0]:
-        x, y = np.meshgrid(np.linspace(-0.5, 0.5, m.shape[1]), np.linspace(-0.5, 0.5, m.shape[0]))
-        mux = (lm[0]-m.shape[1]//2)/1./m.shape[1]
-        muy = (lm[1]-m.shape[0]//2)/1./m.shape[0]
-        s = sigma / 1. / m.shape[0]
-        m = (x-mux)**2 / 2. / s**2 + (y-muy)**2 / 2. / s**2
-        m = np.exp(-m)
-        m -= m.min()
-        m /= m.max()
-
-    return m
-
-
-def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
-    """
-    Converts image and the landmarks in numpy into torch.
-    The landmarks are converted into heatmaps as well.
-    Covers both, low- and high-cost annotations cases.
-
-    Parameters
-    ----------
-    dc : sld.DataContainer
-        Data container
-    downsample : int
-        Downsampling factor to match the hourglass outputs.
-    sigma : float
-        Variance of the gaussian to fit at each landmark
-    Returns
-    -------
-    out : tuple of torch.FloatTensor
-
-    """
-    if dc.data_format != 'IPL':
-        raise TypeError('Invalid type of data container')
-
-    img, landmarks, label = dc.data
-
-    target = []
-    for i in range(landmarks.data.shape[0]):
-        res = l2m(landmarks.data[i] // downsample,
-                  (img.shape[0] // downsample, img.shape[1] // downsample), sigma)
-
-        target.append(numpy2tens(res))
-
-    #plt.imshow(img.squeeze(), cmap=plt.cm.Greys_r)
-    #plt.imshow(cv2.resize(target[0].squeeze().numpy(),
-    #                      (img.shape[1], img.shape[0])),
-    #           alpha=0.5, cmap=plt.cm.jet)
-    #plt.show()
-    target = torch.cat(target, 0).unsqueeze(0)
-    assert target.size(0) == 1
-    assert target.size(1) == landmarks.data.shape[0]
-    assert target.size(2) == img.shape[0] // downsample
-    assert target.size(3) == img.shape[0] // downsample
-    assert len(img.shape) == 3
-
-    img = torch.from_numpy(img.squeeze()).float().unsqueeze(0)
-    landmarks = torch.from_numpy(landmarks.data / downsample).float()
-    return img, target, landmarks, label
 

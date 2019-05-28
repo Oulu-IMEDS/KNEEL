@@ -3,7 +3,7 @@ from torch import nn
 
 import torch.nn.functional as F
 
-from kneelandmarks.model.modules import HGResidual, conv_block_1x1, conv_block_3x3
+from kneelandmarks.model.modules import HGResidual, conv_block_1x1
 
 
 class Hourglass(nn.Module):

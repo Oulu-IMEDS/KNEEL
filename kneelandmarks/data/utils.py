@@ -1,7 +1,11 @@
+import torch
+import solt.data as sld
 import numpy as np
 import pydicom as dicom
 from sas7bdat import SAS7BDAT
 import pandas as pd
+import cv2
+from deeppipeline.common.transforms import  numpy2tens
 
 
 def read_pts(fname):
@@ -88,3 +92,100 @@ def read_sas7bdata_pd(fname):
             data.append(row)
 
     return pd.DataFrame(data[1:], columns=data[0])
+
+
+def l2m(lm, shape, sigma=1.5):
+    # lm = (x,y)
+    m = np.zeros(shape, dtype=np.uint8)
+
+    if np.all(lm > 0) and lm[0] < shape[1] and lm[1] < shape[0]:
+        x, y = np.meshgrid(np.linspace(-0.5, 0.5, m.shape[1]), np.linspace(-0.5, 0.5, m.shape[0]))
+        mux = (lm[0]-m.shape[1]//2)/1./m.shape[1]
+        muy = (lm[1]-m.shape[0]//2)/1./m.shape[0]
+        s = sigma / 1. / m.shape[0]
+        m = (x-mux)**2 / 2. / s**2 + (y-muy)**2 / 2. / s**2
+        m = np.exp(-m)
+        m -= m.min()
+        m /= m.max()
+
+    return m
+
+
+def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
+    """
+    Converts image and the landmarks in numpy into torch.
+    The landmarks are converted into heatmaps as well.
+    Covers both, low- and high-cost annotations cases.
+
+    Parameters
+    ----------
+    dc : sld.DataContainer
+        Data container
+    downsample : int
+        Downsampling factor to match the hourglass outputs.
+    sigma : float
+        Variance of the gaussian to fit at each landmark
+    Returns
+    -------
+    out : tuple of torch.FloatTensor
+
+    """
+    if dc.data_format != 'IPL':
+        raise TypeError('Invalid type of data container')
+
+    img, landmarks, label = dc.data
+
+    target = []
+    for i in range(landmarks.data.shape[0]):
+        res = l2m(landmarks.data[i] // downsample,
+                  (img.shape[0] // downsample, img.shape[1] // downsample), sigma)
+
+        target.append(numpy2tens(res))
+
+    #plt.imshow(img.squeeze(), cmap=plt.cm.Greys_r)
+    #plt.imshow(cv2.resize(target[0].squeeze().numpy(),
+    #                      (img.shape[1], img.shape[0])),
+    #           alpha=0.5, cmap=plt.cm.jet)
+    #plt.show()
+    target = torch.cat(target, 0).unsqueeze(0)
+    assert target.size(0) == 1
+    assert target.size(1) == landmarks.data.shape[0]
+    assert target.size(2) == img.shape[0] // downsample
+    assert target.size(3) == img.shape[0] // downsample
+    assert len(img.shape) == 3
+
+    img = torch.from_numpy(img.squeeze()).float().unsqueeze(0)
+    landmarks = torch.from_numpy(landmarks.data / downsample).float()
+    return img, target, landmarks, label
+
+
+def get_landmarks_from_hm(pred_map, remap_shape, pad, threshold=0.9):
+    res = []
+
+    for i in range(pred_map.shape[0]):
+        m = pred_map[i, :, :]
+
+        m -= m.min()
+        m /= m.max()
+        m *= 255
+        m = m.astype(np.uint8)
+        m = cv2.resize(m, remap_shape)
+
+        tmp = m.mean(0)
+        tmp /= tmp.max()
+
+        x = np.where(tmp > threshold)[0]  # coords
+        ind = np.diff(x).argmax().astype(int)
+        if ind == 0:
+            x = int(np.median(x))
+        else:
+            x = int(np.median(x[:ind]))  # leftmost cluster
+        tmp = m[:, x - pad:x + pad].mean(1)
+
+        tmp[np.isnan(tmp)] = 0
+        tmp /= tmp.max()
+        y = np.where(tmp > threshold)  #
+        y = y[0][0]
+        res.append([x, y])
+
+    return np.array(res)
