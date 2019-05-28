@@ -155,7 +155,8 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
     assert len(img.shape) == 3
 
     img = torch.from_numpy(img.squeeze()).float().unsqueeze(0)
-    landmarks = torch.from_numpy(landmarks.data / downsample).float()
+    # the ground truth should stay in the image coordinate system.
+    landmarks = torch.from_numpy(landmarks.data).float()
     return img, target, landmarks, label
 
 

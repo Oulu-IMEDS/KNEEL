@@ -1,8 +1,10 @@
+import numpy as np
 import torch
 from tqdm import tqdm
 import gc
-
+import pandas as pd
 from deeppipeline.kvs import GlobalKVS
+from kneelandmarks.data.utils import get_landmarks_from_hm
 
 
 def pass_epoch(net, loader, optimizer, criterion):
@@ -25,7 +27,6 @@ def pass_epoch(net, loader, optimizer, criterion):
 
             inputs = entry['img'].to(device)
             target_hm = entry['target_hm'].to(device).squeeze().unsqueeze(1)
-            #target_kp = entry['target_kp']
             outputs = net(inputs)
             loss = criterion(outputs, target_hm)
 
@@ -40,7 +41,22 @@ def pass_epoch(net, loader, optimizer, criterion):
                 pbar.set_description(desc=f"Fold [{fold_id}] [{epoch} | {max_ep}] | Validation progress")
             if optimizer is None:
                 if not kvs['args'].sagm:
-                    pass
+                    if isinstance(outputs, tuple):
+                        target_kp = entry['kp_gt'].numpy()
+                        predict = outputs[-1].to('cpu').numpy()
+                        xy_batch = np.zeros((predict.shape[0], 2))
+                        for j in range(predict.shape[0]):
+                            try:
+                                xy_batch[j] = get_landmarks_from_hm(predict[j],
+                                                                    inputs.size()[-2:],
+                                                                    2, 0.9)
+                            except IndexError:
+                                xy_batch[j] = -1
+                        spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
+                        err = np.sqrt(np.sum(((target_kp.squeeze() - xy_batch.squeeze())*spacing) ** 2, 1))
+                        landmark_errors.append(err)
+                    else:
+                        raise NotImplementedError
                 else:
                     raise NotImplementedError
             pbar.update()
@@ -48,9 +64,25 @@ def pass_epoch(net, loader, optimizer, criterion):
         gc.collect()
         pbar.close()
 
-    return running_loss / n_batches, None
+    if len(landmark_errors) > 0:
+        landmark_errors = np.hstack(landmark_errors)
+    else:
+        landmark_errors = None
+
+    return running_loss / n_batches, landmark_errors
 
 
 def val_results_callback(writer, val_metrics, to_log, val_results):
-    pass
+    results = []
+    precision = [1, 1.5, 2, 2.5, 3, 5, 10]
+    n_outliers = np.sum(val_results < 0)
+    val_results = val_results[val_results > 0]
 
+    tmp = []
+    for t in precision:
+        tmp.append(np.sum((val_results <= t)) / val_results.shape[0])
+
+    results.append(tmp)
+    results = pd.DataFrame(data=results, columns=list(map(lambda x: '@ {} mm'.format(x), precision)))
+    print('# outliers:', n_outliers)
+    print(results)
