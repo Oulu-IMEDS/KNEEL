@@ -91,7 +91,7 @@ def pass_epoch(net, loader, optimizer, criterion):
 
 def val_results_callback(writer, val_metrics, to_log, val_results):
     results = []
-    precision = [1, 1.5, 2, 2.5, 3, 5, 10]
+    precision = [1, 1.5, 2, 2.5, 3, 5, 10, 15]
     n_outliers = np.sum(val_results < 0)
     val_results = val_results[val_results > 0]
 

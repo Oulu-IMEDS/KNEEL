@@ -1,12 +1,9 @@
 import numpy as np
 import torch
 from torchvision import transforms as tvt
-import matplotlib.pyplot as plt
-import cv2
 
 from functools import partial
 import os
-import pandas as pd
 from torch.utils.data import DataLoader
 
 import solt.core as slc
@@ -26,12 +23,9 @@ def init_augs():
     ppl = tvt.Compose([
         slc.SelectiveStream([
             slc.Stream([
-                slt.RandomFlip(p=0.5, axis=1),
-                slt.RandomScale(range_x=(0.6, 3), p=0.5),
-                slt.RandomRotate(rotation_range=(-180, 180), p=0.2),
                 slt.RandomProjection(affine_transforms=slc.Stream([
                     slt.RandomScale(range_x=(0.8, 1.3), p=1),
-                    slt.RandomRotate(rotation_range=(-180, 180), p=1),
+                    slt.RandomRotate(rotation_range=(-90, 90), p=1),
                     slt.RandomShear(range_x=(-0.1, 0.1), range_y=(-0.1, 0.1), p=0.5),
                     slt.RandomShear(range_y=(-0.1, 0.1), range_x=(-0.1, 0.1), p=0.5),
                 ]), v_range=(1e-5, 2e-3), p=0.5),
@@ -43,18 +37,6 @@ def init_augs():
             slt.PadTransform((args.pad_x, args.pad_y), padding='z'),
             slt.CropTransform((args.crop_x, args.crop_y), crop_mode='r'),
         ]),
-        slc.SelectiveStream([
-            slc.Stream([
-                slt.ImageSaltAndPepper(p=0.5, gain_range=0.01),
-                slt.ImageAdditiveGaussianNoise(p=0.5, gain_range=0.5),
-                slc.Stream([
-                    slt.ImageBlur(p=0.5, blur_type='m', k_size=(3, 3)),
-                    slt.ImageSaltAndPepper(p=1, gain_range=0.01),
-                ]),
-            ]),
-            slt.ImageGammaCorrection(p=0.5, gamma_range=(0.5, 1.5)),
-            slc.Stream()
-        ], probs=[0.1, 0.3, 0.6]),
         partial(solt2torchhm, downsample=4, sigma=kvs['args'].hm_sigma),
     ])
     kvs.update('train_trf', ppl)

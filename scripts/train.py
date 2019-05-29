@@ -1,3 +1,5 @@
+import cv2
+
 from deeppipeline.common.core import train_n_folds, init_ms_scheduler
 from deeppipeline.common.dataset import init_folds, init_pd_meta
 
@@ -6,6 +8,9 @@ from kneelandmarks.model import init_model
 from kneelandmarks.data.pipeline import init_augs, init_data_processing, init_loaders
 from kneelandmarks.loss import init_loss
 from kneelandmarks.training import pass_epoch, val_results_callback
+
+cv2.ocl.setUseOpenCL(False)
+cv2.setNumThreads(0)
 
 if __name__ == "__main__":
     train_n_folds(init_args=parse_args,
