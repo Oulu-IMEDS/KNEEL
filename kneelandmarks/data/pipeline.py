@@ -29,7 +29,7 @@ def init_augs():
                     slt.RandomShear(range_x=(-0.1, 0.1), range_y=(-0.1, 0.1), p=0.5),
                     slt.RandomShear(range_y=(-0.1, 0.1), range_x=(-0.1, 0.1), p=0.5),
                 ]), v_range=(1e-5, 2e-3), p=0.5),
-
+                slt.RandomScale(range_x=(0.5, 2.5), p=1),
             ]),
             slc.Stream()
         ], probs=[0.7, 0.3]),
@@ -74,6 +74,10 @@ def init_data_processing():
     ])
 
     val_trf = tvt.Compose([
+        slc.Stream([
+            slt.PadTransform((kvs['args'].pad_x, kvs['args'].pad_y), padding='z'),
+            slt.CropTransform((kvs['args'].crop_x, kvs['args'].crop_y), crop_mode='c'),
+        ]),
         partial(solt2torchhm, downsample=4, sigma=kvs['args'].hm_sigma),
         partial(apply_by_index, transform=norm_trf, idx=0)
     ])
@@ -96,7 +100,7 @@ def init_loaders(x_train, x_val):
                              split=x_val,
                              hc_spacing=kvs['args'].hc_spacing,
                              lc_spacing=kvs['args'].lc_spacing,
-                             transform=kvs['train_trf'],
+                             transform=kvs['val_trf'],
                              ann_type=kvs['args'].annotations,
                              image_pad=kvs['args'].img_pad)
 

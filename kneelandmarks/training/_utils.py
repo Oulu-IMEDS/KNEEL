@@ -5,6 +5,16 @@ import gc
 import pandas as pd
 from deeppipeline.kvs import GlobalKVS
 from kneelandmarks.data.utils import get_landmarks_from_hm
+import cv2
+import matplotlib.pyplot as plt
+
+
+def argmax2d(X):
+    n, m = X.shape
+    x_ = np.ravel(X)
+    k = np.argmax(x_)
+    i, j = k // m, k % m
+    return i, j
 
 
 def pass_epoch(net, loader, optimizer, criterion):
@@ -45,32 +55,29 @@ def pass_epoch(net, loader, optimizer, criterion):
                 pbar.set_description(desc=f"Fold [{fold_id}] [{epoch} | {max_ep}] | Validation progress")
             if optimizer is None:
                 target_kp = entry['kp_gt'].numpy()
+                h, w = inputs.size(2), inputs.size(3)
                 if not kvs['args'].sagm:
                     if isinstance(outputs, tuple):
-                        predict = outputs[-1].to('cpu').numpy()
+                        #TODO: change to the actual prediction
+                        predict = outputs[-1].to('cpu').numpy().squeeze()
                         xy_batch = np.zeros((predict.shape[0], 2))
                         for j in range(predict.shape[0]):
                             try:
-                                xy_batch[j] = get_landmarks_from_hm(predict[j],
-                                                                    inputs.size()[-2:],
-                                                                    2, 0.9)
+                                xy_batch[j] = get_landmarks_from_hm(predict[j], (h, w), 2, 0.9)
                             except IndexError:
                                 xy_batch[j] = -1
                     else:
                         raise NotImplementedError
                 else:
-                    xy_batch = outputs.to('cpu').numpy()
-
-                h, w = inputs.size(2), inputs.size(3)
+                    xy_batch = outputs.to('cpu').numpy().squeeze()
+                    xy_batch[:, 0] *= (w - 1)
+                    xy_batch[:, 1] *= (h - 1)
 
                 target_kp = target_kp.squeeze()
                 xy_batch = xy_batch.squeeze()
 
-                target_kp[:, 0] *= w
-                xy_batch[:, 0] *= w
-
-                target_kp[:, 1] *= h
-                xy_batch[:, 1] *= h
+                target_kp[:, 0] *= (w - 1)
+                target_kp[:, 1] *= (h - 1)
 
                 spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
                 err = np.sqrt(np.sum(((target_kp - xy_batch) * spacing) ** 2, 1))
@@ -83,6 +90,22 @@ def pass_epoch(net, loader, optimizer, criterion):
 
     if len(landmark_errors) > 0:
         landmark_errors = np.hstack(landmark_errors)
+        for i in range(inputs.size(0)):
+            img = entry['img'][i].squeeze().numpy()
+            target = entry['target_hm'][i].squeeze().numpy()
+
+            target_hm = cv2.resize(target, (img.shape[1], img.shape[0]))
+            pred = cv2.resize(predict[i].squeeze(), (img.shape[1], img.shape[0]))
+            plt.figure(figsize=(10, 10))
+
+            plt.subplot(121)
+            plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
+            plt.imshow(target_hm, cmap=plt.get_cmap('jet'), alpha=0.3)
+
+            plt.subplot(122)
+            plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
+            plt.imshow(pred, cmap=plt.get_cmap('jet'), alpha=0.3)
+            plt.show()
     else:
         landmark_errors = None
 

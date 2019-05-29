@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument('--n_epochs', type=int, default=100)
     parser.add_argument('--optimizer', choices=['sgd', 'adam'], default='adam')
     parser.add_argument('--fold', type=int, default=0)
-    parser.add_argument('--hm_loss', choices=['bce', 'mse'], default='bce')
+    parser.add_argument('--hm_loss', choices=['elastic', 'mse'], default='mse')
     parser.add_argument('--loss_weight', type=float, default=0.5)
     parser.add_argument('--start_val', type=int, default=-1)
     parser.add_argument('--lr_drop', nargs='+', default=[50, 80], type=int)

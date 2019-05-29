@@ -5,7 +5,8 @@ import pydicom as dicom
 from sas7bdat import SAS7BDAT
 import pandas as pd
 import cv2
-from deeppipeline.common.transforms import  numpy2tens
+from deeppipeline.common.transforms import numpy2tens
+import matplotlib.pyplot as plt
 
 
 def read_pts(fname):
@@ -134,11 +135,13 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
         raise TypeError('Invalid type of data container')
 
     img, landmarks, label = dc.data
+    img = img.squeeze()
+    h, w = img.shape[0], img.shape[1]
+    new_size = (h // downsample, w // downsample)
 
     target = []
     for i in range(landmarks.data.shape[0]):
-        res = l2m(landmarks.data[i] // downsample,
-                  (img.shape[0] // downsample, img.shape[1] // downsample), sigma)
+        res = l2m(landmarks.data[i] // downsample, new_size, sigma)
 
         target.append(numpy2tens(res))
 
@@ -147,11 +150,18 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
     assert target.size(1) == landmarks.data.shape[0]
     assert target.size(2) == img.shape[0] // downsample
     assert target.size(3) == img.shape[1] // downsample
-    assert len(img.shape) == 3
-
-    img = torch.from_numpy(img.squeeze()).float().unsqueeze(0)
+    # plt.figure()
+    # plt.imshow(img.squeeze(), cmap=plt.cm.Greys_r)
+    # plt.imshow(cv2.resize(target[0].squeeze().numpy(),
+    #                       (img.shape[1], img.shape[0])),
+    #            alpha=0.5, cmap=plt.cm.jet)
+    # plt.show()
+    img = torch.from_numpy(img).float().unsqueeze(0)
     # the ground truth should stay in the image coordinate system.
     landmarks = torch.from_numpy(landmarks.data).float()
+    landmarks[:, 0] /= (w - 1)
+    landmarks[:, 1] /= (h - 1)
+
     return img, target, landmarks, label
 
 
