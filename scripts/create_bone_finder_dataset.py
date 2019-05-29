@@ -113,7 +113,7 @@ if __name__ == "__main__":
     parser.add_argument('--to_save_high_cost_img', default='/media/lext/FAST/knee_landmarks/workdir/high_cost_data')
     parser.add_argument('--to_save_meta', default='/media/lext/FAST/knee_landmarks/workdir/')
     parser.add_argument('--high_cost_spacing', type=float, default=0.3)
-    parser.add_argument('--low_cost_spacing', type=int, default=2)
+    parser.add_argument('--low_cost_spacing', type=int, default=0.5)
     parser.add_argument('--n_per_grade', type=int, default=150)
     parser.add_argument('--num_threads', type=int, default=30)
     parser.add_argument('--seed', type=int, default=123456)
