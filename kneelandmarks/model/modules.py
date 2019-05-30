@@ -2,7 +2,7 @@ from torch import nn
 from deeppipeline.common.modules import conv_block_1x1, conv_block_3x3
 import torch
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
+
 
 class Identity(nn.Module):
     def forward(self, x):
