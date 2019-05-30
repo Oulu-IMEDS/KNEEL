@@ -19,7 +19,7 @@ def pass_epoch(net, loader, optimizer, criterion):
 
     running_loss = 0.0
     n_batches = len(loader)
-    landmark_errors = []
+    landmark_errors = {}
     device = next(net.parameters()).device
     pbar = tqdm(total=n_batches, ncols=200)
     with torch.set_grad_enabled(optimizer is not None):
@@ -31,7 +31,7 @@ def pass_epoch(net, loader, optimizer, criterion):
             if not kvs['args'].sagm:
                 target = entry['target_hm'].to(device).squeeze().unsqueeze(1)
             else:
-                target = entry['kp_gt'].to(device).squeeze()
+                target = entry['kp_gt'].to(device)
 
             outputs = net(inputs)
             loss = criterion(outputs, target)
@@ -49,26 +49,31 @@ def pass_epoch(net, loader, optimizer, criterion):
                 target_kp = entry['kp_gt'].numpy()
                 h, w = inputs.size(2), inputs.size(3)
                 if isinstance(outputs, tuple):
-                    predicts = outputs[-1].to('cpu').numpy().squeeze()
+                    predicts = outputs[-1].to('cpu').numpy()
                 else:
-                    predicts = outputs.to('cpu').numpy().squeeze()
+                    predicts = outputs.to('cpu').numpy()
 
                 if not kvs['args'].sagm:
                     xy_batch = get_landmarks_from_hm(predicts, w, h, kvs['args'].heatmap_pad, 0.9)
                 else:
                     xy_batch = predicts
-                    xy_batch[:, 0] *= (w - 1)
-                    xy_batch[:, 1] *= (h - 1)
+                    xy_batch[:, :, 0] *= (w - 1)
+                    xy_batch[:, :, 1] *= (h - 1)
 
-                target_kp = target_kp.squeeze()
-                xy_batch = xy_batch.squeeze()
+                target_kp = target_kp
+                xy_batch = xy_batch
 
-                target_kp[:, 0] *= (w - 1)
-                target_kp[:, 1] *= (h - 1)
+                target_kp[:, :, 0] *= (w - 1)
+                target_kp[:, :, 1] *= (h - 1)
 
-                spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
-                err = np.sqrt(np.sum(((target_kp - xy_batch) * spacing) ** 2, 1))
-                landmark_errors.append(err)
+                for kp_id in range(target_kp.shape[1]):
+                    spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
+                    d = target_kp[:, kp_id] - xy_batch[:, kp_id]
+                    err = np.sqrt(np.sum(d ** 2, 1)) * spacing
+                    if kp_id not in landmark_errors:
+                        landmark_errors[kp_id] = list()
+
+                    landmark_errors[kp_id].append(err)
 
             pbar.update()
             gc.collect()
@@ -76,7 +81,8 @@ def pass_epoch(net, loader, optimizer, criterion):
         pbar.close()
 
     if len(landmark_errors) > 0:
-        landmark_errors = np.hstack(landmark_errors)
+        for kp_id in landmark_errors:
+            landmark_errors[kp_id] = np.hstack(landmark_errors[kp_id])
 
         # if not kvs['args'].sagm:
             # for i in range(inputs.size(0)):
@@ -104,14 +110,18 @@ def pass_epoch(net, loader, optimizer, criterion):
 def val_results_callback(writer, val_metrics, to_log, val_results):
     results = []
     precision = [1, 1.5, 2, 2.5, 3, 5, 10, 15]
-    n_outliers = np.sum(val_results < 0)
-    val_results = val_results[val_results > 0]
+    for kp_id in val_results:
+        kp_res = val_results[kp_id]
 
-    tmp = []
-    for t in precision:
-        tmp.append(np.sum((val_results <= t)) / val_results.shape[0])
+        n_outliers = np.sum(kp_res < 0) / kp_res.shape[0]
+        kp_res = kp_res[kp_res > 0]
 
-    results.append(tmp)
-    results = pd.DataFrame(data=results, columns=list(map(lambda x: '@ {} mm'.format(x), precision)))
-    print('# outliers:', n_outliers)
+        tmp = []
+        for t in precision:
+            tmp.append(np.sum((kp_res <= t)) / kp_res.shape[0])
+        tmp.append(n_outliers)
+        results.append(tmp)
+    cols = list(map(lambda x: '@ {} mm'.format(x), precision)) + ["% out.", ]
+
+    results = pd.DataFrame(data=results, columns=cols)
     print(results)

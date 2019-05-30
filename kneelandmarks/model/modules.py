@@ -48,10 +48,10 @@ class SoftArgmax2D(nn.Module):
         w_y = torch.arange(h).float().div(h)
         w_y = w_y.to(hm.device).mul(weights.transpose(2, 3)).transpose(2, 3)
 
-        approx_x = softmax.mul(w_x).view(bs, nc, h*w).sum(2)
-        approx_y = softmax.mul(w_y).view(bs, nc, h*w).sum(2)
+        approx_x = softmax.mul(w_x).view(bs, nc, h*w).sum(2).unsqueeze(2)
+        approx_y = softmax.mul(w_y).view(bs, nc, h*w).sum(2).unsqueeze(2)
 
-        res_xy = torch.cat([approx_x, approx_y], 1)
+        res_xy = torch.cat([approx_x, approx_y], 2)
         return res_xy
 
 
