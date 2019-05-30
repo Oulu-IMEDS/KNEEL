@@ -3,7 +3,7 @@ from torch import nn
 
 import torch.nn.functional as F
 
-from kneelandmarks.model.modules import HGResidual, conv_block_1x1, SoftArgmax
+from kneelandmarks.model.modules import HGResidual, conv_block_1x1, SoftArgmax2D
 
 
 class Hourglass(nn.Module):
@@ -83,7 +83,7 @@ class HourglassNet(nn.Module):
         if use_sagm and refinement:
             raise ValueError('Refinement and soft-argmax are mutually exclusive')
 
-        self.sagm = SoftArgmax()
+        self.sagm = SoftArgmax2D()
 
     def forward(self, x):
         # Compressing the input

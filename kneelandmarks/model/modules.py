@@ -29,9 +29,9 @@ class HGResidual(nn.Module):
         return o3 + self.skip(x)
 
 
-class SoftArgmax(nn.Module):
+class SoftArgmax2D(nn.Module):
     def __init__(self, beta=1):
-        super(SoftArgmax, self).__init__()
+        super(SoftArgmax2D, self).__init__()
         self.beta = beta
 
     def forward(self, hm):
