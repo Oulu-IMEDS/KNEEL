@@ -23,13 +23,14 @@ def init_augs():
     ppl = tvt.Compose([
         slc.SelectiveStream([
             slc.Stream([
+                slt.RandomFlip(p=0.5, axis=1),
                 slt.RandomProjection(affine_transforms=slc.Stream([
                     slt.RandomScale(range_x=(0.8, 1.3), p=1),
                     slt.RandomRotate(rotation_range=(-90, 90), p=1),
                     slt.RandomShear(range_x=(-0.1, 0.1), range_y=(-0.1, 0.1), p=0.5),
                     slt.RandomShear(range_y=(-0.1, 0.1), range_x=(-0.1, 0.1), p=0.5),
                 ]), v_range=(1e-5, 2e-3), p=0.5),
-                slt.RandomScale(range_x=(0.5, 2.5), p=1),
+                slt.RandomScale(range_x=(0.5, 2.5), p=0.5),
             ]),
             slc.Stream()
         ], probs=[0.7, 0.3]),
@@ -37,6 +38,22 @@ def init_augs():
             slt.PadTransform((args.pad_x, args.pad_y), padding='z'),
             slt.CropTransform((args.crop_x, args.crop_y), crop_mode='r'),
         ]),
+        slc.SelectiveStream([
+            slt.ImageSaltAndPepper(p=1, gain_range=0.01),
+            slt.ImageBlur(p=1, blur_type='g', k_size=(3, 5)),
+            slt.ImageBlur(p=1, blur_type='m', k_size=(3, 5)),
+            slt.ImageAdditiveGaussianNoise(p=1, gain_range=0.5),
+            slc.Stream([
+                slt.ImageSaltAndPepper(p=1, gain_range=0.05),
+                slt.ImageBlur(p=0.5, blur_type='m', k_size=(3, 5)),
+            ]),
+            slc.Stream([
+                slt.ImageBlur(p=0.5, blur_type='m', k_size=(3, 5)),
+                slt.ImageSaltAndPepper(p=1, gain_range=0.01),
+            ]),
+            slc.Stream()
+        ], n=1),
+        slt.ImageGammaCorrection(p=1, gamma_range=(0.5, 1.5)),
         partial(solt2torchhm, downsample=4, sigma=kvs['args'].hm_sigma),
     ])
     kvs.update('train_trf', ppl)
