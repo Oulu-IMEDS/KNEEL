@@ -164,8 +164,8 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
 
     # the ground truth should stay in the image coordinate system.
     landmarks = torch.from_numpy(landmarks.data).float()
-    landmarks[:, 0] /= (w - 1)
-    landmarks[:, 1] /= (h - 1)
+    landmarks[:, 0] /= w
+    landmarks[:, 1] /= h
 
     return img, target, landmarks, label
 

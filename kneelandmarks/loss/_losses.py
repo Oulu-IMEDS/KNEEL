@@ -6,13 +6,20 @@ from torch.nn import functional as F
 class ElasticLoss(nn.Module):
     def __init__(self, w=0.5):
         super(ElasticLoss, self).__init__()
-        self.weights = torch.FloatTensor([1, 1 - w])
+        self.weights = torch.FloatTensor([w, 1 - w])
 
     def forward(self, preds, gt):
-        l2 = F.mse_loss(preds, gt).mul(self.weights[0])
-        l1 = F.l1_loss(preds, gt).mul(self.weights[1])
+        loss = 0
 
-        return l2 + l1
+        if not isinstance(preds, tuple):
+            preds = (preds, )
+
+        for i in range(len(preds)):
+            l2 = F.mse_loss(preds[i].squeeze(), gt.squeeze()).mul(self.weights[0])
+            l1 = F.l1_loss(preds[i].squeeze(), gt.squeeze()).mul(self.weights[1])
+            loss += l1 + l2
+
+        return loss
 
 
 class HGHMLoss(nn.Module):

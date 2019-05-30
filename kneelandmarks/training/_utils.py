@@ -48,15 +48,15 @@ def pass_epoch(net, loader, optimizer, criterion):
             if optimizer is None:
                 target_kp = entry['kp_gt'].numpy()
                 h, w = inputs.size(2), inputs.size(3)
-                if not kvs['args'].sagm:
-                    if isinstance(outputs, tuple):
-                        #TODO: change to the actual prediction
-                        predicts = outputs[-1].to('cpu').numpy().squeeze()
-                        xy_batch = get_landmarks_from_hm(predicts, w, h, 10, 0.9)
-                    else:
-                        raise NotImplementedError
+                if isinstance(outputs, tuple):
+                    predicts = outputs[-1].to('cpu').numpy().squeeze()
                 else:
-                    xy_batch = outputs.to('cpu').numpy().squeeze()
+                    predicts = outputs.to('cpu').numpy().squeeze()
+
+                if not kvs['args'].sagm:
+                    xy_batch = get_landmarks_from_hm(predicts, w, h, kvs['args'].heatmap_pad, 0.9)
+                else:
+                    xy_batch = predicts
                     xy_batch[:, 0] *= (w - 1)
                     xy_batch[:, 1] *= (h - 1)
 

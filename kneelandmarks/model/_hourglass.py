@@ -80,9 +80,6 @@ class HourglassNet(nn.Module):
             self.out2 = nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0)
 
         self.use_sagm = use_sagm
-        if use_sagm and refinement:
-            raise ValueError('Refinement and soft-argmax are mutually exclusive')
-
         self.sagm = SoftArgmax2D()
 
     def forward(self, x):
@@ -106,7 +103,10 @@ class HourglassNet(nn.Module):
             o = self.compression(o)
             out2 = self.out2(o)
 
-            return out1, out2
+            if self.use_sagm:
+                return self.sagm(out1), self.sagm(out2)
+            else:
+                return out1, out2
         else:
             if self.use_sagm:
                 return self.sagm(out1)

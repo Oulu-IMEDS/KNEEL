@@ -7,11 +7,11 @@ def init_model(ignore_data_parallel=False):
     kvs = GlobalKVS()
     if kvs['args'].annotations == 'lc':
         net = HourglassNet(3, 1, bw=kvs['args'].base_width,
-                           upmode='bilinear', refinement=not kvs['args'].sagm,
+                           upmode='bilinear', refinement=kvs['args'].hg_refine,
                            use_sagm=kvs['args'].sagm)
     else:
         net = HourglassNet(3, 20, bw=kvs['args'].base_width,
-                           upmode='bilinear', refinement=not kvs['args'].sagm,
+                           upmode='bilinear', refinement=kvs['args'].hg_refine,
                            use_sagm=kvs['args'].sagm)
 
     if not ignore_data_parallel:
