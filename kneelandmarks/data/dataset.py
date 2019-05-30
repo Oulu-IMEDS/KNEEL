@@ -29,14 +29,14 @@ class LandmarkDataset(data.Dataset):
         else:
             fname = os.path.join(self.data_root, f'{subject_id}.png')
 
-        img = cv2.imread(fname, 0)
+        img = cv2.imread(fname)
 
         if self.ann_type == 'hc':
             lndms = np.vstack((parse_landmarks(t_lnd), parse_landmarks(f_lnd)))
             kpts = sld.KeyPoints(lndms, img.shape[0], img.shape[1])
             dc = sld.DataContainer((img, kpts, kl), 'IPL')
         else:
-            row, col = img.shape
+            row, col, _ = img.shape
             center = np.array(list(map(int, center.split(',')))) * self.hc_lc_scale - self.hc_lc_scale * self.img_pad
             if side == 'L':
                 img = img[:, col//2:]
