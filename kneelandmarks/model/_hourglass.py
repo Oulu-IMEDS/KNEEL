@@ -83,7 +83,7 @@ class HourglassNet(nn.Module):
         if use_sagm and refinement:
             raise ValueError('Refinement and soft-argmax are mutually exclusive')
 
-        self.sagm = SoftArgmax(beta=1)
+        self.sagm = SoftArgmax()
 
     def forward(self, x):
         # Compressing the input

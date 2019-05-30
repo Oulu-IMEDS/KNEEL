@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--pad_x', type=int, default=200)
     parser.add_argument('--pad_y', type=int, default=500)
     parser.add_argument('--n_inp', type=int, default=2)
+    parser.add_argument('--heatmap_pad', type=int, default=10, help='for robust 2d argmax')
     parser.add_argument('--skip_train', type=int, default=1)
     parser.add_argument('--seed', type=int, default=42)
     return parser.parse_args()

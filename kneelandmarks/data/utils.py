@@ -165,33 +165,36 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
     return img, target, landmarks, label
 
 
-def get_landmarks_from_hm(pred_map, remap_shape, pad, threshold=0.9):
+def get_landmarks_from_hm(pred_map, resize_x, resize_y, pad, threshold=0.9):
     res = []
 
     for i in range(pred_map.shape[0]):
-        m = pred_map[i, :, :]
+        try:
+            m = pred_map[i, :, :]
 
-        m -= m.min()
-        m /= m.max()
-        m *= 255
-        m = m.astype(np.uint8)
-        m = cv2.resize(m, remap_shape)
+            m -= m.min()
+            m /= m.max()
+            m *= 255
+            m = m.astype(np.uint8)
+            m = cv2.resize(m, (resize_x, resize_y))
 
-        tmp = m.mean(0)
-        tmp /= tmp.max()
+            tmp = m.mean(0)
+            tmp /= tmp.max()
 
-        x = np.where(tmp > threshold)[0]  # coords
-        ind = np.diff(x).argmax().astype(int)
-        if ind == 0:
-            x = int(np.median(x))
-        else:
-            x = int(np.median(x[:ind]))  # leftmost cluster
-        tmp = m[:, x - pad:x + pad].mean(1)
+            x = np.where(tmp > threshold)[0]  # coords
+            ind = np.diff(x).argmax().astype(int)
+            if ind == 0:
+                x = int(np.median(x))
+            else:
+                x = int(np.median(x[:ind]))  # leftmost cluster
+            tmp = m[:, x - pad:x + pad].mean(1)
 
-        tmp[np.isnan(tmp)] = 0
-        tmp /= tmp.max()
-        y = np.where(tmp > threshold)  #
-        y = y[0][0]
-        res.append([x, y])
+            tmp[np.isnan(tmp)] = 0
+            tmp /= tmp.max()
+            y = np.where(tmp > threshold)  #
+            y = y[0][0]
+            res.append([x, y])
+        except IndexError:
+            res.append([-1, -1])
 
     return np.array(res)

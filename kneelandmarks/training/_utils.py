@@ -9,14 +9,6 @@ import cv2
 import matplotlib.pyplot as plt
 
 
-def argmax2d(X):
-    n, m = X.shape
-    x_ = np.ravel(X)
-    k = np.argmax(x_)
-    i, j = k // m, k % m
-    return i, j
-
-
 def pass_epoch(net, loader, optimizer, criterion):
     kvs = GlobalKVS()
     net.train(optimizer is not None)
@@ -59,13 +51,8 @@ def pass_epoch(net, loader, optimizer, criterion):
                 if not kvs['args'].sagm:
                     if isinstance(outputs, tuple):
                         #TODO: change to the actual prediction
-                        predict = outputs[-1].to('cpu').numpy().squeeze()
-                        xy_batch = np.zeros((predict.shape[0], 2))
-                        for j in range(predict.shape[0]):
-                            try:
-                                xy_batch[j] = get_landmarks_from_hm(predict[j], (h, w), 2, 0.9)
-                            except IndexError:
-                                xy_batch[j] = -1
+                        predicts = outputs[-1].to('cpu').numpy().squeeze()
+                        xy_batch = get_landmarks_from_hm(predicts, w, h, 10, 0.9)
                     else:
                         raise NotImplementedError
                 else:
@@ -90,22 +77,24 @@ def pass_epoch(net, loader, optimizer, criterion):
 
     if len(landmark_errors) > 0:
         landmark_errors = np.hstack(landmark_errors)
-        for i in range(inputs.size(0)):
-            img = entry['img'][i].squeeze().numpy()
-            target = entry['target_hm'][i].squeeze().numpy()
 
-            target_hm = cv2.resize(target, (img.shape[1], img.shape[0]))
-            pred = cv2.resize(predict[i].squeeze(), (img.shape[1], img.shape[0]))
-            plt.figure(figsize=(10, 10))
-
-            plt.subplot(121)
-            plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
-            plt.imshow(target_hm, cmap=plt.get_cmap('jet'), alpha=0.3)
-
-            plt.subplot(122)
-            plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
-            plt.imshow(pred, cmap=plt.get_cmap('jet'), alpha=0.3)
-            plt.show()
+        # if not kvs['args'].sagm:
+            # for i in range(inputs.size(0)):
+            #     img = entry['img'][i].squeeze().numpy()
+            #     target = entry['target_hm'][i].squeeze().numpy()
+            #
+            #     target_hm = cv2.resize(target, (img.shape[1], img.shape[0]))
+            #     pred = cv2.resize(predicts[i].squeeze(), (img.shape[1], img.shape[0]))
+            #     plt.figure(figsize=(10, 10))
+            #
+            #     plt.subplot(121)
+            #     plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
+            #     plt.imshow(target_hm, cmap=plt.get_cmap('jet'), alpha=0.3)
+            #
+            #     plt.subplot(122)
+            #     plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
+            #     plt.imshow(pred, cmap=plt.get_cmap('jet'), alpha=0.3)
+            #     plt.show()
     else:
         landmark_errors = None
 
