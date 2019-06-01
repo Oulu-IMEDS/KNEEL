@@ -44,19 +44,30 @@ class Hourglass(nn.Module):
 
 class HourglassNet(nn.Module):
     def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4,
-                 upmode='nearest', refinement=True, use_sagm=False):
+                 upmode='nearest', refinement=True, use_sagm=False, fast_mode=False):
         super(HourglassNet, self).__init__()
         self.refinement = refinement
 
-        self.conv1 = nn.Sequential(
+        self.layer1 = nn.Sequential(
             nn.Conv2d(n_inputs, bw, kernel_size=7, stride=2, padding=3),
             nn.BatchNorm2d(bw),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
+            HGResidual(bw, bw * 2),
+            nn.MaxPool2d(2)
         )
 
-        self.res1 = HGResidual(bw, bw * 2)
-        self.res2 = HGResidual(bw * 2, bw * 2)
-        self.res3 = HGResidual(bw * 2, bw * 2)
+        if fast_mode:
+            self.layer2 = nn.Sequential(
+                HGResidual(bw * 2, bw * 2),
+                HGResidual(bw * 2, bw * 2),
+                nn.MaxPool2d(2)
+            )
+        else:
+            self.layer2 = nn.Sequential(
+                HGResidual(bw * 2, bw * 2),
+                HGResidual(bw * 2, bw * 2),
+            )
+
         self.res4 = HGResidual(bw * 2, bw * 4)
 
         self.hg1 = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode)
@@ -84,21 +95,17 @@ class HourglassNet(nn.Module):
 
     def forward(self, x):
         # Compressing the input
-        o_1 = self.conv1(x)
-        o_before_mp = self.res1(o_1)
-        o_p = F.max_pool2d(o_before_mp, 2)
+        o_1 = self.layer1(x)
+        o_2 = self.layer2(o_1)
 
-        # Performing first hourglass stage
-        o = self.res2(o_p)
-        o = self.res3(o)
-        o = self.res4(o)
+        o = self.res4(o_2)
         o = self.hg1(o)
         # Producing the 1st set of predictions
         o = self.linear1(o)
         out1 = self.out1(o)
         if self.refinement:
             # Refining the outputs
-            o = torch.cat([o, o_p], 1) + self.remap1(out1)
+            o = torch.cat([o, o_1], 1) + self.remap1(out1)
             o = self.hg2(o)
             o = self.compression(o)
             out2 = self.out2(o)
