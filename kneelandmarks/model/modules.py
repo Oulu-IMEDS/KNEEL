@@ -29,6 +29,31 @@ class HGResidual(nn.Module):
         return o3 + self.skip(x)
 
 
+class MultiScaleHGResidual(nn.Module):
+    """
+    https://arxiv.org/pdf/1808.04803.pdf
+
+    """
+    def __init__(self, n_inp, n_out):
+        super().__init__()
+        self.scale1 = conv_block_3x3(n_inp, n_out // 2, 'relu')
+        self.scale2 = conv_block_3x3(n_out // 2, n_out // 4, 'relu')
+        self.scale3 = conv_block_3x3(n_out // 4, n_out - n_out // 4 - n_out // 2, None)
+
+        if n_inp != n_out:
+            self.skip = conv_block_1x1(n_inp, n_out, None)
+        else:
+            self.skip = Identity()
+
+    def forward(self, x):
+        o1 = self.scale1(x)
+        o2 = self.scale2(o1)
+        o3 = self.scale3(o2)
+
+        return torch.cat([o1, o2, o3], 1) + self.skip(x)
+
+
+
 class SoftArgmax2D(nn.Module):
     def __init__(self, beta=1):
         super(SoftArgmax2D, self).__init__()

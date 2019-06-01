@@ -3,29 +3,36 @@ from torch import nn
 
 import torch.nn.functional as F
 
-from kneelandmarks.model.modules import HGResidual, conv_block_1x1, SoftArgmax2D
+from kneelandmarks.model.modules import HGResidual, conv_block_1x1, SoftArgmax2D, MultiScaleHGResidual
 
 
 class Hourglass(nn.Module):
-    def __init__(self, n, hg_width, n_inp, n_out, upmode='nearest'):
-        super().__init__()
+    def __init__(self, n, hg_width, n_inp, n_out, upmode='nearest', multiscale_block=False):
+        super(Hourglass, self).__init__()
 
+        self.multiscale_block = multiscale_block
         self.upmode = upmode
 
-        self.lower1 = HGResidual(n_inp, hg_width)
-        self.lower2 = HGResidual(hg_width, hg_width)
-        self.lower3 = HGResidual(hg_width, hg_width)
+        self.lower1 = self.__make_block(n_inp, hg_width)
+        self.lower2 = self.__make_block(hg_width, hg_width)
+        self.lower3 = self.__make_block(hg_width, hg_width)
 
         if n > 1:
             self.lower4 = Hourglass(n - 1, hg_width, hg_width, n_out, upmode)
         else:
-            self.lower4 = HGResidual(hg_width, n_out)
+            self.lower4 = self.__make_block(hg_width, n_out)
 
-        self.lower5 = HGResidual(n_out, n_out)
+        self.lower5 = self.__make_block(n_out, n_out)
 
-        self.upper1 = HGResidual(n_inp, hg_width)
-        self.upper2 = HGResidual(hg_width, hg_width)
-        self.upper3 = HGResidual(hg_width, n_out)
+        self.upper1 = self.__make_block(n_inp, hg_width)
+        self.upper2 = self.__make_block(hg_width, hg_width)
+        self.upper3 = self.__make_block(hg_width, n_out)
+
+    def __make_block(self, inp, out):
+        if self.multiscale_block:
+            return MultiScaleHGResidual(inp, out)
+        else:
+            return HGResidual(inp, out)
 
     def forward(self, x):
         o_pooled = F.max_pool2d(x, 2)
@@ -44,33 +51,36 @@ class Hourglass(nn.Module):
 
 class HourglassNet(nn.Module):
     def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4,
-                 upmode='nearest', refinement=True, use_sagm=False, fast_mode=False):
+                 upmode='nearest', refinement=True, use_sagm=False,
+                 fast_mode=False, multiscale_hg_block=False):
+
         super(HourglassNet, self).__init__()
         self.refinement = refinement
+        self.multiscale_hg_block = multiscale_hg_block
 
         self.layer1 = nn.Sequential(
             nn.Conv2d(n_inputs, bw, kernel_size=7, stride=2, padding=3),
             nn.BatchNorm2d(bw),
             nn.ReLU(inplace=True),
-            HGResidual(bw, bw * 2),
+            self.__make_hg_block(bw, bw * 2),
             nn.MaxPool2d(2)
         )
 
         if fast_mode:
             self.layer2 = nn.Sequential(
-                HGResidual(bw * 2, bw * 2),
-                HGResidual(bw * 2, bw * 2),
+                self.__make_hg_block(bw * 2, bw * 2),
+                self.__make_hg_block(bw * 2, bw * 2),
                 nn.MaxPool2d(2)
             )
         else:
             self.layer2 = nn.Sequential(
-                HGResidual(bw * 2, bw * 2),
-                HGResidual(bw * 2, bw * 2),
+                self.__make_hg_block(bw * 2, bw * 2),
+                self.__make_hg_block(bw * 2, bw * 2),
             )
 
-        self.res4 = HGResidual(bw * 2, bw * 4)
+        self.res4 = self.__make_hg_block(bw * 2, bw * 4)
 
-        self.hg1 = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode)
+        self.hg1 = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode, multiscale_hg_block)
 
         self.linear1 = nn.Sequential(conv_block_1x1(bw * 8, bw * 8, 'relu'),
                                      conv_block_1x1(bw * 8, bw * 4, 'relu'))
@@ -83,7 +93,7 @@ class HourglassNet(nn.Module):
 
             self.remap1 = nn.Conv2d(n_outputs, bw * 2 + bw * 4, kernel_size=1, padding=0)
 
-            self.hg2 = Hourglass(hg_depth, bw * 4, bw * 2 + bw * 4, bw * 8, upmode)
+            self.hg2 = Hourglass(hg_depth, bw * 4, bw * 2 + bw * 4, bw * 8, upmode, multiscale_hg_block)
 
             self.compression = nn.Sequential(conv_block_1x1(bw * 8, bw * 8, 'relu'),
                                              conv_block_1x1(bw * 8, bw * 4, 'relu'))
@@ -92,6 +102,12 @@ class HourglassNet(nn.Module):
 
         self.use_sagm = use_sagm
         self.sagm = SoftArgmax2D()
+
+    def __make_hg_block(self, inp, out):
+        if self.multiscale_hg_block:
+            return MultiScaleHGResidual(inp, out)
+        else:
+            return HGResidual(inp, out)
 
     def forward(self, x):
         # Compressing the input
