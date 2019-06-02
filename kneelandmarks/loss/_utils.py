@@ -1,5 +1,5 @@
 from deeppipeline.kvs import GlobalKVS
-from ._losses import LNLoss, ElasticLoss, WingLoss
+from deeppipeline.common.losses import LNLoss, ElasticLoss, WingLoss
 
 
 def init_loss():

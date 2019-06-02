@@ -1,52 +1,8 @@
 import torch
 from torch import nn
 
-import torch.nn.functional as F
-
-from kneelandmarks.model.modules import HGResidual, conv_block_1x1, SoftArgmax2D, MultiScaleHGResidual
-
-
-class Hourglass(nn.Module):
-    def __init__(self, n, hg_width, n_inp, n_out, upmode='nearest', multiscale_block=False):
-        super(Hourglass, self).__init__()
-
-        self.multiscale_block = multiscale_block
-        self.upmode = upmode
-
-        self.lower1 = self.__make_block(n_inp, hg_width)
-        self.lower2 = self.__make_block(hg_width, hg_width)
-        self.lower3 = self.__make_block(hg_width, hg_width)
-
-        if n > 1:
-            self.lower4 = Hourglass(n - 1, hg_width, hg_width, n_out, upmode)
-        else:
-            self.lower4 = self.__make_block(hg_width, n_out)
-
-        self.lower5 = self.__make_block(n_out, n_out)
-
-        self.upper1 = self.__make_block(n_inp, hg_width)
-        self.upper2 = self.__make_block(hg_width, hg_width)
-        self.upper3 = self.__make_block(hg_width, n_out)
-
-    def __make_block(self, inp, out):
-        if self.multiscale_block:
-            return MultiScaleHGResidual(inp, out)
-        else:
-            return HGResidual(inp, out)
-
-    def forward(self, x):
-        o_pooled = F.max_pool2d(x, 2)
-
-        o1 = self.lower1(o_pooled)
-        o2 = self.lower2(o1)
-        o3 = self.lower3(o2)
-
-        o4 = self.lower4(o3)
-
-        o1_u = self.upper1(x)
-        o2_u = self.upper2(o1_u)
-        o3_u = self.upper3(o2_u)
-        return o3_u + F.interpolate(self.lower5(o4), x.size()[-2:], mode=self.upmode, align_corners=True)
+from deeppipeline.common.modules import conv_block_1x1
+from deeppipeline.keypoints.models.modules import Hourglass, HGResidual, MultiScaleHGResidual, SoftArgmax2D
 
 
 class HourglassNet(nn.Module):
