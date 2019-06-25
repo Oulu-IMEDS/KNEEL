@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from deeppipeline.common.modules import conv_block_1x1
 from deeppipeline.keypoints.models.modules import Hourglass, HGResidual, MultiScaleHGResidual, SoftArgmax2D
@@ -7,11 +8,9 @@ from deeppipeline.keypoints.models.modules import Hourglass, HGResidual, MultiSc
 
 class HourglassNet(nn.Module):
     def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4,
-                 upmode='nearest', refinement=True, use_sagm=False,
-                 fast_mode=False, multiscale_hg_block=False):
+                 upmode='bilinear', multiscale_hg_block=False):
 
         super(HourglassNet, self).__init__()
-        self.refinement = refinement
         self.multiscale_hg_block = multiscale_hg_block
 
         self.layer1 = nn.Sequential(
@@ -22,17 +21,10 @@ class HourglassNet(nn.Module):
             nn.MaxPool2d(2)
         )
 
-        if fast_mode:
-            self.layer2 = nn.Sequential(
-                self.__make_hg_block(bw * 2, bw * 2),
-                self.__make_hg_block(bw * 2, bw * 2),
-                nn.MaxPool2d(2)
-            )
-        else:
-            self.layer2 = nn.Sequential(
-                self.__make_hg_block(bw * 2, bw * 2),
-                self.__make_hg_block(bw * 2, bw * 2),
-            )
+        self.layer2 = nn.Sequential(
+            self.__make_hg_block(bw * 2, bw * 2),
+            self.__make_hg_block(bw * 2, bw * 2),
+        )
 
         self.res4 = self.__make_hg_block(bw * 2, bw * 4)
 
@@ -43,20 +35,6 @@ class HourglassNet(nn.Module):
 
         self.out1 = nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0)
 
-        if self.refinement:
-            # to match the concatenation after the first pooling and the first
-            # set of predictions
-
-            self.remap1 = nn.Conv2d(n_outputs, bw * 2 + bw * 4, kernel_size=1, padding=0)
-
-            self.hg2 = Hourglass(hg_depth, bw * 4, bw * 2 + bw * 4, bw * 8, upmode, multiscale_hg_block)
-
-            self.compression = nn.Sequential(conv_block_1x1(bw * 8, bw * 8, 'relu'),
-                                             conv_block_1x1(bw * 8, bw * 4, 'relu'))
-
-            self.out2 = nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0)
-
-        self.use_sagm = use_sagm
         self.sagm = SoftArgmax2D()
 
     def __make_hg_block(self, inp, out):
@@ -72,22 +50,7 @@ class HourglassNet(nn.Module):
 
         o = self.res4(o_2)
         o = self.hg1(o)
-        # Producing the 1st set of predictions
         o = self.linear1(o)
-        out1 = self.out1(o)
-        if self.refinement:
-            # Refining the outputs
-            o = torch.cat([o, o_1], 1) + self.remap1(out1)
-            o = self.hg2(o)
-            o = self.compression(o)
-            out2 = self.out2(o)
+        out = self.out1(o)
 
-            if self.use_sagm:
-                return self.sagm(out1), self.sagm(out2)
-            else:
-                return out1, out2
-        else:
-            if self.use_sagm:
-                return self.sagm(out1)
-            else:
-                return out1
+        return self.sagm(out)
