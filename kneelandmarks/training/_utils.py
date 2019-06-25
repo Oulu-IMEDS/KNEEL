@@ -31,7 +31,7 @@ def pass_epoch(net, loader, optimizer, criterion):
             if not kvs['args'].sagm:
                 target = entry['target_hm'].to(device).squeeze().unsqueeze(1)
             else:
-                target = entry['kp_gt'].to(device)
+                target = entry['kp_gt'].to(device).float()
 
             outputs = net(inputs)
             loss = criterion(outputs, target)
@@ -109,7 +109,7 @@ def pass_epoch(net, loader, optimizer, criterion):
 
 def val_results_callback(writer, val_metrics, to_log, val_results):
     results = []
-    precision = [1, 1.5, 2, 2.5, 3, 5, 10, 15]
+    precision = [1, 1.5, 2, 2.5, 3, 5]
     for kp_id in val_results:
         kp_res = val_results[kp_id]
 
