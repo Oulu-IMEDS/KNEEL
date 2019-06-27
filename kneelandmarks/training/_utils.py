@@ -4,8 +4,7 @@ from tqdm import tqdm
 import gc
 import pandas as pd
 from deeppipeline.kvs import GlobalKVS
-from deeppipeline.common.core import mixup
-from torch.distributions import beta
+from deeppipeline.common.core import mixup_pass
 
 import cv2
 import matplotlib.pyplot as plt
@@ -24,7 +23,7 @@ def pass_epoch(net, loader, optimizer, criterion):
     landmark_errors = {}
     device = next(net.parameters()).device
     pbar = tqdm(total=n_batches, ncols=200)
-    mixup_sampler = beta.Beta(kvs['args'].mixup_alpha, kvs['args'].mixup_alpha)
+
     with torch.set_grad_enabled(optimizer is not None):
         for i, entry in enumerate(loader):
             if optimizer is not None:
@@ -34,16 +33,7 @@ def pass_epoch(net, loader, optimizer, criterion):
             target = entry['kp_gt'].to(device).float()
 
             if kvs['args'].use_mixup and optimizer is not None:
-                lam = mixup_sampler.sample().item()
-                mixed_inputs, shuffled_targets = mixup(inputs, target, lam)
-
-                outputs = net(inputs)
-                outputs_mixed = net(mixed_inputs)
-
-                loss_orig = criterion(outputs, target)
-                loss_mixed = criterion(outputs_mixed, shuffled_targets)
-
-                loss = lam * loss_orig + (1 - lam) * loss_mixed
+                loss = mixup_pass(net, criterion, kvs['args'].mixup_alpha)
             else:
                 outputs = net(inputs)
                 loss = criterion(outputs, target)
