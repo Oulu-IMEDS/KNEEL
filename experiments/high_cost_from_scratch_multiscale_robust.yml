@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) with SWA and robust loss"
+  - experiment_description: "High cost annotations (full set) | robust loss"
   - annotations : "hc"
   - seed: 42
 transforms:
@@ -17,10 +17,7 @@ training:
   - wd: 0.0001
   - optim: adam
   - n_epochs: 100
-  - use_swa: True
-  - swa_lr: 0.0005
-  - swa_start: 20
-  - swa_freq: 5
+  - use_swa: false
 loss:
   - loss_type: robust
   - alpha_robust: 1

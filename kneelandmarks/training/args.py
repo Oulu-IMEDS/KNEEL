@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--swa_freq', type=int, default=2)
     parser.add_argument('--swa_lr', type=float, default=1e-3)
     parser.add_argument('--fold', type=int, default=-1)
-    parser.add_argument('--loss_type', choices=['elastic', 'mse', 'wing', 'robust'], default='wing')
+    parser.add_argument('--loss_type', choices=['elastic', 'mse', 'l1', 'wing', 'robust'], default='wing')
     parser.add_argument('--alpha_robust', type=float, default=1.)
     parser.add_argument('--c_robust', type=float, default=1e-2)
     parser.add_argument('--alpha_robust_min', type=float, default=0.)
