@@ -4,9 +4,6 @@ from tqdm import tqdm
 import gc
 import pandas as pd
 from deeppipeline.kvs import GlobalKVS
-from deeppipeline.common.core import init_optimizer_default
-from torchcontrib.optim import swa
-
 
 import cv2
 import matplotlib.pyplot as plt
