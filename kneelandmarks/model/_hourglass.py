@@ -8,7 +8,7 @@ from deeppipeline.keypoints.models.modules import Hourglass, HGResidual, MultiSc
 
 class HourglassNet(nn.Module):
     def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4,
-                 upmode='bilinear', multiscale_hg_block=False):
+                 upmode='bilinear', multiscale_hg_block=False,):
 
         super(HourglassNet, self).__init__()
         self.multiscale_hg_block = multiscale_hg_block
@@ -24,17 +24,15 @@ class HourglassNet(nn.Module):
         self.layer2 = nn.Sequential(
             self.__make_hg_block(bw * 2, bw * 2),
             self.__make_hg_block(bw * 2, bw * 2),
+            self.__make_hg_block(bw * 2, bw * 4)
         )
 
-        self.res4 = self.__make_hg_block(bw * 2, bw * 4)
+        self.hourglass = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode, multiscale_hg_block)
 
-        self.hg1 = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode, multiscale_hg_block)
+        self.mixer = nn.Sequential(conv_block_1x1(bw * 8, bw * 8),
+                                   conv_block_1x1(bw * 8, bw * 4))
 
-        self.linear1 = nn.Sequential(conv_block_1x1(bw * 8, bw * 8, 'relu'),
-                                     conv_block_1x1(bw * 8, bw * 4, 'relu'))
-
-        self.out1 = nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0)
-
+        self.out_block = nn.Sequential(nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0))
         self.sagm = SoftArgmax2D()
 
     def __make_hg_block(self, inp, out):
@@ -44,13 +42,11 @@ class HourglassNet(nn.Module):
             return HGResidual(inp, out)
 
     def forward(self, x):
-        # Compressing the input
-        o_1 = self.layer1(x)
-        o_2 = self.layer2(o_1)
+        o_layer_1 = self.layer1(x)
+        o_layer_2 = self.layer2(o_layer_1)
 
-        o = self.res4(o_2)
-        o = self.hg1(o)
-        o = self.linear1(o)
-        out = self.out1(o)
+        o_hg = self.hourglass(o_layer_2)
+        o_mixer = self.mixer(o_hg)
+        out = self.out_block(o_mixer)
 
         return self.sagm(out)

@@ -21,6 +21,9 @@ if __name__ == "__main__":
                   init_loaders=init_loaders,
                   init_model=init_model,
                   init_loss=init_loss,
+                  init_optimizer=None,
                   init_scheduler=init_ms_scheduler,
-                  pass_epoch=pass_epoch, log_metrics_cb=val_results_callback,
-                  img_group_id_colname='subject_id', img_class_colname='kl')
+                  pass_epoch=pass_epoch,
+                  log_metrics_cb=val_results_callback,
+                  img_group_id_colname='subject_id',
+                  img_class_colname='kl')
