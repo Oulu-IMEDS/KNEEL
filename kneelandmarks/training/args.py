@@ -1,4 +1,5 @@
 import argparse
+import yaml
 
 
 def parse_args():
@@ -6,6 +7,7 @@ def parse_args():
     parser.add_argument('--dataset_root', default='/media/lext/FAST/knee_landmarks/workdir/low_cost_data')
     parser.add_argument('--workdir', default='/media/lext/FAST/knee_landmarks/workdir')
     parser.add_argument('--metadata', default='bf_landmarks_1_0.3.csv')
+    parser.add_argument('--experiment_config', default='')
     parser.add_argument('--annotations', type=str, choices=['hc', 'lc'], default='lc')
     parser.add_argument('--base_width', type=int, default=24)
     parser.add_argument('--n_folds', type=int, default=5)
@@ -41,4 +43,14 @@ def parse_args():
     parser.add_argument('--pad_y', type=int, default=500)
     parser.add_argument('--skip_train', type=int, default=1)
     parser.add_argument('--seed', type=int, default=42)
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.experiment_config != '':
+        with open(args.experiment_config, 'r') as f:
+            conf = yaml.load(f)
+        for category in conf:
+            for arg in conf[category]:
+                key = list(arg.keys())[0]
+                setattr(args, key, arg[key])
+
+    return args
