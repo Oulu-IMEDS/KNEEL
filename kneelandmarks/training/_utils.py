@@ -4,7 +4,10 @@ from tqdm import tqdm
 import gc
 import pandas as pd
 from deeppipeline.kvs import GlobalKVS
-from kneelandmarks.data.utils import get_landmarks_from_hm
+from deeppipeline.common.core import init_optimizer_default
+from torchcontrib.optim import swa
+
+
 import cv2
 import matplotlib.pyplot as plt
 
@@ -77,24 +80,6 @@ def pass_epoch(net, loader, optimizer, criterion):
     if len(landmark_errors) > 0:
         for kp_id in landmark_errors:
             landmark_errors[kp_id] = np.hstack(landmark_errors[kp_id])
-
-        # if not kvs['args'].sagm:
-            # for i in range(inputs.size(0)):
-            #     img = entry['img'][i].squeeze().numpy()
-            #     target = entry['target_hm'][i].squeeze().numpy()
-            #
-            #     target_hm = cv2.resize(target, (img.shape[1], img.shape[0]))
-            #     pred = cv2.resize(predicts[i].squeeze(), (img.shape[1], img.shape[0]))
-            #     plt.figure(figsize=(10, 10))
-            #
-            #     plt.subplot(121)
-            #     plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
-            #     plt.imshow(target_hm, cmap=plt.get_cmap('jet'), alpha=0.3)
-            #
-            #     plt.subplot(122)
-            #     plt.imshow(img, cmap=plt.get_cmap('Greys_r'))
-            #     plt.imshow(pred, cmap=plt.get_cmap('jet'), alpha=0.3)
-            #     plt.show()
     else:
         landmark_errors = None
 
@@ -103,7 +88,7 @@ def pass_epoch(net, loader, optimizer, criterion):
 
 def val_results_callback(writer, val_metrics, to_log, val_results):
     results = []
-    precision = [1, 1.5, 2, 2.5, 3, 5]
+    precision = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5]
     for kp_id in val_results:
         kp_res = val_results[kp_id]
 
@@ -119,3 +104,9 @@ def val_results_callback(writer, val_metrics, to_log, val_results):
 
     results = pd.DataFrame(data=results, columns=cols)
     print(results)
+
+
+def init_optimizer_swa(net, criterion):
+    kvs = GlobalKVS()
+    opt = init_optimizer_default(net, criterion)
+    return swa.SWA(opt, kvs['args'].swa_start, kvs['args'].swa_freq, kvs['args'].swa_lr)
