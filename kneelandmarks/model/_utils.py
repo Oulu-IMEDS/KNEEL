@@ -10,7 +10,7 @@ def init_model(ignore_data_parallel=False):
                            upmode='bilinear',
                            multiscale_hg_block=kvs['args'].multiscale_hg)
     else:
-        net = HourglassNet(3, 20, bw=kvs['args'].base_width,
+        net = HourglassNet(3, 16, bw=kvs['args'].base_width,
                            upmode='bilinear',
                            multiscale_hg_block=kvs['args'].multiscale_hg)
 

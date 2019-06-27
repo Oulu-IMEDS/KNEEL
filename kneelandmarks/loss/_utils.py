@@ -13,7 +13,7 @@ def init_loss():
     elif kvs['args'].loss_type == 'wing':
         loss = WingLoss(width=kvs['args'].wing_w, curvature=kvs['args'].wing_c)
     elif kvs['args'].loss_type == 'robust':
-        loss = GeneralizedRobustLoss(num_dims=20 * 2 if kvs['args'].annotations == 'hc' else 2,
+        loss = GeneralizedRobustLoss(num_dims=16 * 2 if kvs['args'].annotations == 'hc' else 2,
                                      alpha_init=kvs['args'].alpha_robust,
                                      scale_init=kvs['args'].c_robust,
                                      alpha_lo=kvs['args'].alpha_robust_min,

@@ -46,12 +46,12 @@ def worker(data_entry, args):
     row, col = img.shape
 
     points = np.round(read_pts(os.path.join(landmarks_dir, '001.pts')) * 1 / spacing) + pad
-    landmarks_fl = points[[8, ]+list(range(12, 25, 2))+[28, ], :]
-    landmarks_tl = points[[45, ]+list(range(47, 64, 2))+[65, ], :]
+    landmarks_fl = points[list(range(12, 25, 2)), :]
+    landmarks_tl = points[list(range(47, 64, 2)), :]
 
     points = np.round(read_pts(os.path.join(landmarks_dir, '001_f.pts')) * 1 / spacing) + pad
-    landmarks_fr = points[[8, ]+list(range(12, 25, 2))+[28, ], :]
-    landmarks_tr = points[[45, ]+list(range(47, 64, 2))+[65, ], :]
+    landmarks_fr = points[list(range(12, 25, 2)), :]
+    landmarks_tr = points[list(range(47, 64, 2)), :]
 
     landmarks_fr[:, 0] = col - landmarks_fr[:, 0]
     landmarks_tr[:, 0] = col - landmarks_tr[:, 0]
