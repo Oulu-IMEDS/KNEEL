@@ -11,6 +11,7 @@ def parse_args():
     parser.add_argument('--n_folds', type=int, default=5)
     parser.add_argument('--n_epochs', type=int, default=100)
     parser.add_argument('--optimizer', choices=['sgd', 'adam'], default='adam')
+    parser.add_argument('--use_swa', type=bool, default=False)
     parser.add_argument('--swa_start', type=int, default=2)
     parser.add_argument('--swa_freq', type=int, default=2)
     parser.add_argument('--swa_lr', type=float, default=1e-3)

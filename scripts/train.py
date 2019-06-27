@@ -7,7 +7,7 @@ from kneelandmarks.training.args import parse_args
 from kneelandmarks.model import init_model
 from kneelandmarks.data.pipeline import init_augs, init_data_processing, init_loaders
 from kneelandmarks.loss import init_loss
-from kneelandmarks.training import pass_epoch, val_results_callback, init_optimizer_swa
+from kneelandmarks.training import pass_epoch, val_results_callback
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
@@ -21,7 +21,7 @@ if __name__ == "__main__":
                   init_loaders=init_loaders,
                   init_model=init_model,
                   init_loss=init_loss,
-                  init_optimizer=init_optimizer_swa,
+                  init_optimizer=None,
                   init_scheduler=None,
                   pass_epoch=pass_epoch,
                   log_metrics_cb=val_results_callback,

@@ -104,9 +104,3 @@ def val_results_callback(writer, val_metrics, to_log, val_results):
 
     results = pd.DataFrame(data=results, columns=cols)
     print(results)
-
-
-def init_optimizer_swa(net, criterion):
-    kvs = GlobalKVS()
-    opt = init_optimizer_default(net, criterion)
-    return swa.SWA(opt, kvs['args'].swa_start, kvs['args'].swa_freq, kvs['args'].swa_lr)
