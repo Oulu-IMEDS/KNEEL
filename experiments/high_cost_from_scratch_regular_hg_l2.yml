@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) | elastic loss"
+  - experiment_description: "High cost annotations (full set) | L2 | Regular HG block"
   - annotations : "hc"
   - seed: 42
 transforms:
