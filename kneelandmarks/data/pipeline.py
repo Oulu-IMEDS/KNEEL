@@ -53,8 +53,8 @@ def init_augs():
             ]),
             slc.Stream()
         ], n=1),
-        slt.ImageGammaCorrection(p=1, gamma_range=(0.5, 1.5)),
-        partial(solt2torchhm, downsample=4, sigma=kvs['args'].hm_sigma),
+        slt.ImageGammaCorrection(p=0.5, gamma_range=(0.5, 1.5)),
+        partial(solt2torchhm, downsample=None, sigma=None),
     ])
     kvs.update('train_trf', ppl)
 
@@ -95,7 +95,7 @@ def init_data_processing():
             slt.PadTransform((kvs['args'].pad_x, kvs['args'].pad_y), padding='z'),
             slt.CropTransform((kvs['args'].crop_x, kvs['args'].crop_y), crop_mode='c'),
         ]),
-        partial(solt2torchhm, downsample=4, sigma=kvs['args'].hm_sigma),
+        partial(solt2torchhm, downsample=None, sigma=None),
         partial(apply_by_index, transform=norm_trf, idx=0)
     ])
 

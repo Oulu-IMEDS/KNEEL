@@ -1,7 +1,4 @@
-import torch
 from torch import nn
-from torch.nn import functional as F
-
 from deeppipeline.common.modules import conv_block_1x1
 from deeppipeline.keypoints.models.modules import Hourglass, HGResidual, MultiScaleHGResidual, SoftArgmax2D
 

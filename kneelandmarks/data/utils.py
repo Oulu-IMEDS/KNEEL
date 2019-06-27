@@ -137,19 +137,21 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
     img, landmarks, label = dc.data
     img = img.squeeze()
     h, w = img.shape[0], img.shape[1]
-    new_size = (h // downsample, w // downsample)
+    target = None
+    if sigma is not None:
+        new_size = (h // downsample, w // downsample)
 
-    target = []
-    for i in range(landmarks.data.shape[0]):
-        res = l2m(landmarks.data[i] // downsample, new_size, sigma)
+        target = []
+        for i in range(landmarks.data.shape[0]):
+            res = l2m(landmarks.data[i] // downsample, new_size, sigma)
 
-        target.append(numpy2tens(res))
+            target.append(numpy2tens(res))
 
-    target = torch.cat(target, 0).unsqueeze(0)
-    assert target.size(0) == 1
-    assert target.size(1) == landmarks.data.shape[0]
-    assert target.size(2) == img.shape[0] // downsample
-    assert target.size(3) == img.shape[1] // downsample
+        target = torch.cat(target, 0).unsqueeze(0)
+        assert target.size(0) == 1
+        assert target.size(1) == landmarks.data.shape[0]
+        assert target.size(2) == img.shape[0] // downsample
+        assert target.size(3) == img.shape[1] // downsample
     # plt.figure()
     # plt.imshow(img.squeeze(), cmap=plt.cm.Greys_r)
     # plt.imshow(cv2.resize(target[0].squeeze().numpy(),

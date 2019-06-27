@@ -28,10 +28,7 @@ def pass_epoch(net, loader, optimizer, criterion):
                 optimizer.zero_grad()
 
             inputs = entry['img'].to(device)
-            if not kvs['args'].sagm:
-                target = entry['target_hm'].to(device).squeeze().unsqueeze(1)
-            else:
-                target = entry['kp_gt'].to(device).float()
+            target = entry['kp_gt'].to(device).float()
 
             outputs = net(inputs)
             loss = criterion(outputs, target)
@@ -53,12 +50,9 @@ def pass_epoch(net, loader, optimizer, criterion):
                 else:
                     predicts = outputs.to('cpu').numpy()
 
-                if not kvs['args'].sagm:
-                    xy_batch = get_landmarks_from_hm(predicts, w, h, kvs['args'].heatmap_pad, 0.9)
-                else:
-                    xy_batch = predicts
-                    xy_batch[:, :, 0] *= (w - 1)
-                    xy_batch[:, :, 1] *= (h - 1)
+                xy_batch = predicts
+                xy_batch[:, :, 0] *= (w - 1)
+                xy_batch[:, :, 1] *= (h - 1)
 
                 target_kp = target_kp
                 xy_batch = xy_batch

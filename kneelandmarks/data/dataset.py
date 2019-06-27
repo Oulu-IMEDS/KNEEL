@@ -50,9 +50,14 @@ class LandmarkDataset(data.Dataset):
         transform_result = self.transform(dc)
         img, target_hm, target_kp, kl = transform_result
 
-        return {'img': img, 'target_hm': target_hm,
-                'subject_id': subject_id, 'kl': kl,
-                'kp_gt': target_kp}
+        res = {'img': img,
+               'subject_id': subject_id, 'kl': kl,
+               'kp_gt': target_kp}
+
+        if target_hm is not None:
+            res['target_hm'] = target_hm
+
+        return res
 
     def __len__(self):
         return self.split.shape[0]
