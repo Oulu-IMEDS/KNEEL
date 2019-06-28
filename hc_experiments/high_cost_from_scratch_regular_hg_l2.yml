@@ -19,4 +19,4 @@ training:
   - n_epochs: 100
   - use_swa: false
 loss:
-  - loss_type: mse
+  - loss_type: l2

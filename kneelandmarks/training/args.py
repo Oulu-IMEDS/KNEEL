@@ -1,5 +1,4 @@
 import argparse
-import yaml
 
 
 def parse_args():
@@ -19,7 +18,7 @@ def parse_args():
     parser.add_argument('--swa_freq', type=int, default=2)
     parser.add_argument('--swa_lr', type=float, default=1e-3)
     parser.add_argument('--fold', type=int, default=-1)
-    parser.add_argument('--loss_type', choices=['elastic', 'mse', 'l1', 'wing', 'robust'], default='wing')
+    parser.add_argument('--loss_type', choices=['elastic', 'l2', 'l1', 'wing', 'robust'], default='wing')
     parser.add_argument('--alpha_robust', type=float, default=1.)
     parser.add_argument('--c_robust', type=float, default=1e-2)
     parser.add_argument('--alpha_robust_min', type=float, default=0.)
@@ -47,13 +46,5 @@ def parse_args():
     parser.add_argument('--skip_train', type=int, default=1)
     parser.add_argument('--seed', type=int, default=42)
     args = parser.parse_args()
-
-    if args.experiment_config != '':
-        with open(args.experiment_config, 'r') as f:
-            conf = yaml.load(f)
-        for category in conf:
-            for arg in conf[category]:
-                key = list(arg.keys())[0]
-                setattr(args, key, arg[key])
 
     return args
