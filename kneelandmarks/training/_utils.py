@@ -33,7 +33,7 @@ def pass_epoch(net, loader, optimizer, criterion):
             target = entry['kp_gt'].to(device).float()
 
             if kvs['args'].use_mixup and optimizer is not None:
-                loss = mixup_pass(net, criterion, kvs['args'].mixup_alpha)
+                loss = mixup_pass(net, criterion, inputs, target, kvs['args'].mixup_alpha)
             else:
                 outputs = net(inputs)
                 loss = criterion(outputs, target)
