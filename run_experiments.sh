@@ -2,7 +2,7 @@
 
 HC_DATA_ROOT=/media/lext/FAST/knee_landmarks/workdir/high_cost_data
 WORKDIR=/media/lext/FAST/knee_landmarks/workdir
-EXP_DIR=hc_experiments/
+EXP_DIR=hc_experiments_todo/
 
 #for EXP_FILE in $(ls ${EXP_DIR})
 #do

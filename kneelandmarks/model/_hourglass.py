@@ -5,10 +5,12 @@ from deeppipeline.keypoints.models.modules import Hourglass, HGResidual, MultiSc
 
 class HourglassNet(nn.Module):
     def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4,
-                 upmode='bilinear', multiscale_hg_block=False,):
+                 upmode='bilinear', multiscale_hg_block=False, se=False, se_ratio=16):
 
         super(HourglassNet, self).__init__()
         self.multiscale_hg_block = multiscale_hg_block
+        self.se = se
+        self.se_ratio = se_ratio
 
         self.layer1 = nn.Sequential(
             nn.Conv2d(n_inputs, bw, kernel_size=7, stride=2, padding=3),
@@ -24,7 +26,8 @@ class HourglassNet(nn.Module):
             self.__make_hg_block(bw * 2, bw * 4)
         )
 
-        self.hourglass = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode, multiscale_hg_block)
+        self.hourglass = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode, multiscale_hg_block,
+                                   se=se, se_ratio=se_ratio)
 
         self.mixer = nn.Sequential(conv_block_1x1(bw * 8, bw * 8),
                                    conv_block_1x1(bw * 8, bw * 4))
@@ -34,9 +37,9 @@ class HourglassNet(nn.Module):
 
     def __make_hg_block(self, inp, out):
         if self.multiscale_hg_block:
-            return MultiScaleHGResidual(inp, out)
+            return MultiScaleHGResidual(inp, out, se=self.se, se_ratio=self.se_ratio)
         else:
-            return HGResidual(inp, out)
+            return HGResidual(inp, out, se=self.se, se_ratio=self.se_ratio)
 
     def forward(self, x):
         o_layer_1 = self.layer1(x)

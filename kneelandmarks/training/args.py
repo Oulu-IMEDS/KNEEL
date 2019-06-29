@@ -24,6 +24,8 @@ def parse_args():
     parser.add_argument('--alpha_robust_min', type=float, default=0.)
     parser.add_argument('--alpha_robust_max', type=float, default=2.)
     parser.add_argument('--multiscale_hg', type=bool, default=False)
+    parser.add_argument('--use_se', type=bool, default=False)
+    parser.add_argument('--se_ratio', type=int, default=16)
     parser.add_argument('--use_mixup', type=bool, default=False)
     parser.add_argument('--mixup_alpha', type=float, default=0.75)
     parser.add_argument('--wing_w', type=float, default=15)

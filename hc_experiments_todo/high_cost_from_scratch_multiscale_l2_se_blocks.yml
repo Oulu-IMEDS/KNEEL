@@ -1,0 +1,23 @@
+experiment:
+  - experiment_description: "High cost annotations (full set) | L2 | se blocks"
+  - annotations : "hc"
+  - seed: 42
+transforms:
+  - pad_x: 500
+  - pad_y: 500
+  - crop_x: 450
+  - crop_y: 450
+  - img_pad: 100
+model:
+  - multiscale_hg: true
+  - base_width: 24
+training:
+  - bs: 16
+  - lr: 0.001
+  - wd: 0.0001
+  - optim: adam
+  - n_epochs: 100
+  - use_se: true
+  - se_ratio: 16
+loss:
+  - loss_type: l2
