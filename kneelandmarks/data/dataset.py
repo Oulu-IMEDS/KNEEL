@@ -32,6 +32,7 @@ class LandmarkDataset(data.Dataset):
         img = cv2.imread(fname)
 
         if self.ann_type == 'hc':
+
             lndms = np.vstack((parse_landmarks(t_lnd), parse_landmarks(f_lnd)))
             kpts = sld.KeyPoints(lndms, img.shape[0], img.shape[1])
             dc = sld.DataContainer((img, kpts, kl), 'IPL')
@@ -52,6 +53,8 @@ class LandmarkDataset(data.Dataset):
 
         res = {'img': img,
                'subject_id': subject_id, 'kl': kl,
+               'side': side,
+               'folder': folder,
                'kp_gt': target_kp}
 
         if target_hm is not None:

@@ -103,7 +103,7 @@ def init_data_processing():
     kvs.update('val_trf', val_trf)
 
 
-def init_loaders(x_train, x_val):
+def init_loaders(x_train, x_val, sequential_val_sampler=False):
     kvs = GlobalKVS()
     train_ds = LandmarkDataset(data_root=kvs['args'].dataset_root,
                                split=x_train,
@@ -126,8 +126,12 @@ def init_loaders(x_train, x_val):
                               drop_last=True,
                               worker_init_fn=lambda wid: np.random.seed(np.uint32(torch.initial_seed() + wid)))
 
+    if sequential_val_sampler:
+        sampler = torch.utils.data.sampler.SequentialSampler(data_source=val_ds)
+    else:
+        sampler = None
     val_loader = DataLoader(val_ds, batch_size=kvs['args'].val_bs,
-                            num_workers=kvs['args'].n_threads)
+                            num_workers=kvs['args'].n_threads, sampler=sampler)
 
     return train_loader, val_loader
 

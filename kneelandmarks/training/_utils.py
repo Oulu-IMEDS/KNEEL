@@ -2,7 +2,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import gc
-import pandas as pd
+from kneelandmarks.evaluation import assess_errors
+
 from deeppipeline.kvs import GlobalKVS
 from deeppipeline.common.core import mixup_pass
 
@@ -89,20 +90,4 @@ def pass_epoch(net, loader, optimizer, criterion):
 
 
 def val_results_callback(writer, val_metrics, to_log, val_results):
-    results = []
-    precision = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5]
-    for kp_id in val_results:
-        kp_res = val_results[kp_id]
-
-        n_outliers = np.sum(kp_res < 0) / kp_res.shape[0]
-        kp_res = kp_res[kp_res > 0]
-
-        tmp = []
-        for t in precision:
-            tmp.append(np.sum((kp_res <= t)) / kp_res.shape[0])
-        tmp.append(n_outliers)
-        results.append(tmp)
-    cols = list(map(lambda x: '@ {} mm'.format(x), precision)) + ["% out.", ]
-
-    results = pd.DataFrame(data=results, columns=cols)
-    print(results)
+    print(assess_errors(val_results))
