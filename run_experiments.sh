@@ -9,3 +9,8 @@ python scripts/experiments_runner.py --data_root ${HC_DATA_ROOT} \
                                      --experiment ${EXP_DIR} \
                                      --log_dir ${WORKDIR}/experiment_runs_queed \
                                      --script_path scripts/train.py
+
+for SNP in $(ls ${WORKDIR}/snapshots/ | grep "2019_")
+do
+    python oof_inference.py --workdir ${WORKDIR} --snapshot $SNP
+done
