@@ -28,7 +28,6 @@ def init_augs():
                     slt.RandomScale(range_x=(0.8, 1.3), p=1),
                     slt.RandomRotate(rotation_range=(-90, 90), p=1),
                     slt.RandomShear(range_x=(-0.1, 0.1), range_y=(-0.1, 0.1), p=0.5),
-                    slt.RandomShear(range_y=(-0.1, 0.1), range_x=(-0.1, 0.1), p=0.5),
                 ]), v_range=(1e-5, 2e-3), p=0.5),
                 slt.RandomScale(range_x=(0.5, 2.5), p=0.5),
             ]),
