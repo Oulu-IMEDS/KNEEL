@@ -99,6 +99,7 @@ if __name__ == "__main__":
                                                  'oai_landmarks_00_via_format_refined.csv')
     parser.add_argument('--kl_info', default='/media/lext/FAST/knee_landmarks/workdir/'
                                              'oai_00_kl_info.csv')
+    parser.add_argument('--to_save_meta', default='/media/lext/FAST/knee_landmarks/workdir/')
     parser.add_argument('--data_dir', default='/media/lext/FAST/knee_landmarks/workdir/oai_images/00/')
     parser.add_argument('--pad', default=100)
     parser.add_argument('--to_save_low_cost_img', default='/media/lext/FAST/knee_landmarks/workdir/low_cost_data')
@@ -131,8 +132,8 @@ if __name__ == "__main__":
     res = Parallel(args.num_threads)(delayed(worker)(data_entry, args) for data_entry in tqdm(to_process,
                                                                                               total=len(to_process)))
     for r in res:
-        info.append(r)
+        info.extend(r)
 
-    df = pd.DataFrame(data=info, columns=['subject_id', 'side', 'folder', 'kl', 'tibia', 'femur', 'bbox', 'center'])
+    df = pd.DataFrame(data=info, columns=['subject_id', 'side', 'kl', 'tibia', 'femur', 'bbox', 'center'])
     df.to_csv(os.path.join(args.to_save_meta,
                            f'bf_landmarks_{args.low_cost_spacing}_{args.high_cost_spacing}.csv'), index=False)

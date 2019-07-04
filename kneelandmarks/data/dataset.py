@@ -21,7 +21,7 @@ class LandmarkDataset(data.Dataset):
         self.hc_lc_scale = self.hc_spacing / self.lc_spacing
 
     def __getitem__(self, index):
-        subject_id, side, folder, kl, t_lnd, f_lnd, _, center = self.split.iloc[index]
+        subject_id, side, kl, t_lnd, f_lnd, _, center = self.split.iloc[index]
         kl = int(kl)
 
         if self.ann_type == 'hc':
@@ -52,9 +52,9 @@ class LandmarkDataset(data.Dataset):
         img, target_hm, target_kp, kl = transform_result
 
         res = {'img': img,
-               'subject_id': subject_id, 'kl': kl,
+               'subject_id': subject_id,
+               'kl': kl,
                'side': side,
-               'folder': folder,
                'kp_gt': target_kp}
 
         if target_hm is not None:

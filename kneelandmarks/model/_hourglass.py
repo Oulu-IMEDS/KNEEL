@@ -5,7 +5,7 @@ from deeppipeline.keypoints.models.modules import Hourglass, HGResidual, MultiSc
 
 class HourglassNet(nn.Module):
     def __init__(self, n_inputs=1, n_outputs=6, bw=64, hg_depth=4,
-                 upmode='bilinear', multiscale_hg_block=False, se=False, se_ratio=16):
+                 upmode='bilinear', multiscale_hg_block=False, se=False, se_ratio=16, use_drop=False):
 
         super(HourglassNet, self).__init__()
         self.multiscale_hg_block = multiscale_hg_block
@@ -29,8 +29,16 @@ class HourglassNet(nn.Module):
         self.hourglass = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode, multiscale_hg_block,
                                    se=se, se_ratio=se_ratio)
 
-        self.mixer = nn.Sequential(conv_block_1x1(bw * 8, bw * 8),
-                                   conv_block_1x1(bw * 8, bw * 4))
+        if use_drop:
+            self.mixer = nn.Sequential(nn.Dropout2d(p=0.25),
+                                       conv_block_1x1(bw * 8, bw * 8),
+                                       nn.Dropout2d(p=0.25),
+                                       conv_block_1x1(bw * 8, bw * 4))
+        else:
+            self.mixer = nn.Sequential(nn.Dropout2d(p=0.25),
+                                       conv_block_1x1(bw * 8, bw * 8),
+                                       nn.Dropout2d(p=0.25),
+                                       conv_block_1x1(bw * 8, bw * 4))
 
         self.out_block = nn.Sequential(nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0))
         self.sagm = SoftArgmax2D()

@@ -1,10 +1,10 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) | wing loss"
+  - experiment_description: "High cost annotations (full set) | robust loss"
   - annotations : "hc"
   - seed: 42
 transforms:
-  - pad_x: 500
-  - pad_y: 500
+  - pad_x: 520
+  - pad_y: 520
   - crop_x: 450
   - crop_y: 450
   - img_pad: 100
@@ -19,6 +19,8 @@ training:
   - n_epochs: 100
   - use_swa: false
 loss:
-  - loss_type: wing
-  - wing_w: 15
-  - wing_c: 3
+  - loss_type: robust
+  - alpha_robust: 1
+  - c_robust: 0.01
+  - alpha_robust_min: 0
+  - alpha_robust_max: 2

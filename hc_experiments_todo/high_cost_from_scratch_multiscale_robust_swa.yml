@@ -1,10 +1,10 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) robust loss | SWA | MixUP | se_blocks"
+  - experiment_description: "High cost annotations (full set) robust loss | SWA "
   - annotations : "hc"
   - seed: 42
 transforms:
-  - pad_x: 500
-  - pad_y: 500
+  - pad_x: 520
+  - pad_y: 520
   - crop_x: 450
   - crop_y: 450
   - img_pad: 100
@@ -21,10 +21,6 @@ training:
   - swa_lr: 0.0005
   - swa_start: 20
   - swa_freq: 5
-  - use_mixup: true
-  - mixup_alpha: 0.75
-  - use_se: true
-  - se_ratio: 16
 loss:
   - loss_type: robust
   - alpha_robust: 1

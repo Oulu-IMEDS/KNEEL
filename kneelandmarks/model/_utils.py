@@ -9,12 +9,14 @@ def init_model():
                            upmode='bilinear',
                            multiscale_hg_block=kvs['args'].multiscale_hg,
                            se=kvs['args'].use_se,
-                           se_ratio=kvs['args'].se_ratio)
+                           se_ratio=kvs['args'].se_ratio,
+                           use_drop=kvs['args'].use_drop)
     else:
         net = HourglassNet(3, 16, bw=kvs['args'].base_width,
                            upmode='bilinear',
                            multiscale_hg_block=kvs['args'].multiscale_hg,
                            se=kvs['args'].use_se,
-                           se_ratio=kvs['args'].se_ratio)
+                           se_ratio=kvs['args'].se_ratio,
+                           use_drop=kvs['args'].use_drop)
 
     return net.to('cuda')

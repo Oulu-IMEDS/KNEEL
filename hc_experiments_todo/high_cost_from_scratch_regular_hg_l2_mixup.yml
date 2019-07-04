@@ -3,8 +3,8 @@ experiment:
   - annotations : "hc"
   - seed: 42
 transforms:
-  - pad_x: 500
-  - pad_y: 500
+  - pad_x: 520
+  - pad_y: 520
   - crop_x: 450
   - crop_y: 450
   - img_pad: 100

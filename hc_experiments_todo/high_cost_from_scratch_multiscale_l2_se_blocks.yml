@@ -1,10 +1,10 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) | elastic loss"
+  - experiment_description: "High cost annotations (full set) | L2 | se blocks"
   - annotations : "hc"
   - seed: 42
 transforms:
-  - pad_x: 500
-  - pad_y: 500
+  - pad_x: 520
+  - pad_y: 520
   - crop_x: 450
   - crop_y: 450
   - img_pad: 100
@@ -17,7 +17,7 @@ training:
   - wd: 0.0001
   - optim: adam
   - n_epochs: 100
-  - use_swa: false
+  - use_se: true
+  - se_ratio: 16
 loss:
-  - loss_type: elastic
-  - loss_weight: 0.5
+  - loss_type: l2
