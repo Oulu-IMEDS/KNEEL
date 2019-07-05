@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
                 img = batch['img'][0]
                 img = img.transpose(0, 2).transpose(0, 1).numpy()
-                visualize_landmarks(img, out[0, :9, :], out[0, 9:, :])
+                # visualize_landmarks(img, out[0, :9, :], out[0, 9:, :])
                 oof_inference.append(out)
                 oof_gt.append(gt)
 

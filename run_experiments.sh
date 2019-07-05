@@ -12,5 +12,5 @@ python scripts/experiments_runner.py --data_root ${HC_DATA_ROOT} \
 
 for SNP in $(ls ${WORKDIR}/snapshots/ | grep "2019_")
 do
-    python oof_inference.py --workdir ${WORKDIR} --snapshot $SNP
+    python scripts/oof_inference.py --workdir ${WORKDIR} --snapshot $SNP
 done
