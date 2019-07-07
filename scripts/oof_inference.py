@@ -104,4 +104,4 @@ if __name__ == "__main__":
 
     landmarks_report_full(inference=oof_inference, gt=oof_gt,
                           spacing=getattr(args, f'{args.annotations}_spacing'), kls=kls,
-                          save_plots_root=os.path.join(oof_results_dir, 'cv_results'))
+                          save_results_root=os.path.join(oof_results_dir, 'cv_results'))

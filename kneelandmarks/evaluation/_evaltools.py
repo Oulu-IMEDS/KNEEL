@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from deeppipeline.common.evaluation import cumulative_error_plot
 import os
-
+import sys
 
 def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save_path=None):
     """
@@ -88,25 +88,34 @@ def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_pl
     return res_grouped, outliers_percentage
 
 
-def landmarks_report_full(inference, gt, spacing, kls, save_plots_root):
-    landmark_errors = np.sqrt(((gt - inference)**2).sum(2))
+def landmarks_report_full(inference, gt, spacing, kls, save_results_root):
+    landmark_errors = np.sqrt(((gt - inference) ** 2).sum(2))
     landmark_errors *= spacing
 
     errs_t = np.expand_dims(landmark_errors[:, :9].mean(1), 1)
     errs_f = np.expand_dims(landmark_errors[:, 9:].mean(1), 1)
     errs = np.hstack((errs_t, errs_f))
-    precision = [1, 1.5, 2, 2.5, 3]
+    precision = [1, 2, 3]
     outliers = np.zeros(landmark_errors.shape)
     outliers[landmark_errors >= 10] = 1
     rep_all, outliers_percentage = landmarks_report_partial(errs, precision, outliers, None,
-                                                            save_plot=os.path.join(save_plots_root,
+                                                            save_plot=os.path.join(save_results_root,
                                                                                    'all_grades.pdf'))
-
-    print(rep_all)
-    print(outliers_percentage)
+    outliers_percentage = np.round(outliers_percentage, 2)
+    lines = list()
+    lines.append('\\toprule')
+    header = ['KL', ] + rep_all['mean'].index.tolist() + ['\\% out', ]
+    header = list(map(lambda x: '\\textbf{'f'{x}''}', header))
+    lines.append(header)
+    lines.append('\\midrule')
+    tmp = list()
+    tmp.append('All')
+    for m, s in zip(rep_all['mean'].values, rep_all['std'].values):
+        tmp.append(f'${m:.2f} \\pm {s:.2f}$')
+    tmp.append(f'${outliers_percentage:.2f}$')
+    lines.append(tmp)
 
     for kl in range(5):
-        print(f'==> KL {kl}')
         idx = kls == kl
         errs_kl = errs[idx]
         outliers_kl = outliers[idx]
@@ -114,7 +123,24 @@ def landmarks_report_full(inference, gt, spacing, kls, save_plots_root):
                                                                   precision,
                                                                   outliers_kl,
                                                                   None,
-                                                                  save_plot=os.path.join(save_plots_root,
+                                                                  save_plot=os.path.join(save_results_root,
                                                                                          f'{kl}.pdf'))
-        print(rep_kl)
-        print(outliers_percentage_kl)
+        tmp = list()
+        tmp.append(f'KL{kl}')
+        for m, s in zip(rep_kl['mean'].values, rep_kl['std'].values):
+            tmp.append(f'${m:.2f} \\pm {s:.2f}$')
+        tmp.append(f'${outliers_percentage_kl:.2f}$')
+        lines.append(tmp)
+    lines.append('\\bottomrule')
+
+    with open(os.path.join(save_results_root, 'cv_res.tex'), 'w') as results_file:
+        for f_print in [sys.stdout, results_file]:
+            print('\\begin{table}[ht!]', file=f_print)
+            print('\\begin{tabular}{'f'{"c"*len(lines[1])}''}', file=f_print)
+            for l in lines:
+                if 'rule' not in l:
+                    print(' & '.join(l).replace('@ ', '') + '\\\\', file=f_print)
+                else:
+                    print(l, file=f_print)
+            print('\\end{tabular}', file=f_print)
+            print('\\end{table}', file=f_print)
