@@ -3,6 +3,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Circle
 import numpy as np
 import pandas as pd
+from deeppipeline.common.evaluation import cumulative_error_plot
 
 
 def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save_path=None):
@@ -60,3 +61,21 @@ def assess_errors(val_results):
     results = pd.DataFrame(data=results, columns=cols)
     return results
 
+
+def landmarks_report(errs, outliers, precision, plot_title=None):
+    results = []
+
+    cumulative_error_plot(errs, labels=['Tibia', 'Femur'], title=plot_title, colors=['red', 'green'])
+
+    for kp_id in range(errs.shape[1]):
+        kp_res = errs[:, kp_id]
+
+        tmp = []
+        for t in precision:
+            tmp.append(np.sum((kp_res <= t)) / kp_res.shape[0])
+        results.append(tmp)
+    cols = list(map(lambda x: '@ {} mm'.format(x), precision))
+
+    results = pd.DataFrame(data=results, columns=cols)
+    res_grouped = pd.concat(((results.mean(0) * 100).round(2), (results.std(0) * 100).round(2)), keys=['mean', 'std'])
+    return res_grouped
