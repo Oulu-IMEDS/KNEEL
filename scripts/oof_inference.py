@@ -9,9 +9,7 @@ import glob
 
 from kneelandmarks.model import init_model
 from kneelandmarks.data.pipeline import init_loaders
-from kneelandmarks.evaluation import visualize_landmarks, landmarks_report
-
-from deeppipeline.common.evaluation import cumulative_error_plot
+from kneelandmarks.evaluation import visualize_landmarks, landmarks_report_full
 from deeppipeline.kvs import GlobalKVS
 
 if __name__ == "__main__":
@@ -29,6 +27,7 @@ if __name__ == "__main__":
     snp_session_full_path = os.path.join(snp_full_path, 'session.pkl')
     oof_results_dir = os.path.join(args.workdir, 'snapshots', args.snapshot, 'oof_inference')
     os.makedirs(os.path.join(oof_results_dir, 'pics'), exist_ok=True)
+    os.makedirs(os.path.join(oof_results_dir, 'cv_results'), exist_ok=True)
 
     with open(snp_session_full_path, 'rb') as f:
         snapshot_session = pickle.load(f)
@@ -103,26 +102,6 @@ if __name__ == "__main__":
 
     oof_inference = np.round(oof_inference)
 
-    landmark_errors = np.sqrt(((oof_gt - oof_inference)**2).sum(2))
-    spacing = getattr(args, f"{args.annotations}_spacing")
-    landmark_errors *= spacing
-
-    errs_t = np.expand_dims(landmark_errors[:, :9].mean(1), 1)
-    errs_f = np.expand_dims(landmark_errors[:, 9:].mean(1), 1)
-    errs = np.hstack((errs_t, errs_f))
-    precision = [1, 1.5, 2, 2.5, 3]
-    outliers = np.zeros(landmark_errors.shape)
-    outliers[landmark_errors >= 10] = 1
-    rep_all, outliers_percentage = landmarks_report(errs, precision, outliers, 'All grades')
-
-    print(rep_all)
-    print(outliers_percentage)
-
-    for kl in range(5):
-        print(f'==> KL {kl}')
-        idx = kls == kl
-        errs_kl = errs[idx]
-        outliers_kl = outliers[idx]
-        rep_kl, outliers_percentage_kl = landmarks_report(errs_kl, precision, outliers_kl, f'KL {kl}')
-        print(rep_kl)
-        print(outliers_percentage_kl)
+    landmarks_report_full(inference=oof_inference, gt=oof_gt,
+                          spacing=getattr(args, f'{args.annotations}_spacing'), kls=kls,
+                          save_plots_root=os.path.join(oof_results_dir, 'cv_results'))

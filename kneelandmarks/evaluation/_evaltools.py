@@ -4,6 +4,7 @@ from matplotlib.patches import Circle
 import numpy as np
 import pandas as pd
 from deeppipeline.common.evaluation import cumulative_error_plot
+import os
 
 
 def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save_path=None):
@@ -62,10 +63,13 @@ def assess_errors(val_results):
     return results
 
 
-def landmarks_report(errs, precision, outliers, plot_title=None):
+def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_plot=None):
     results = []
 
-    cumulative_error_plot(errs, labels=['Tibia', 'Femur'], title=plot_title, colors=['red', 'green'])
+    cumulative_error_plot(errs, labels=['Tibia', 'Femur'],
+                          title=plot_title,
+                          colors=['blue', 'red'],
+                          save_plot=save_plot)
 
     for kp_id in range(errs.shape[1]):
         kp_res = errs[:, kp_id]
@@ -77,7 +81,40 @@ def landmarks_report(errs, precision, outliers, plot_title=None):
     cols = list(map(lambda x: '@ {} mm'.format(x), precision))
 
     results = pd.DataFrame(data=results, columns=cols)
-    res_grouped = pd.concat(((results.mean(0) * 100).round(2), (results.std(0) * 100).round(2)), keys=['mean', 'std'])
+    res_grouped = pd.concat(((results.mean(0) * 100).round(2),
+                             (results.std(0) * 100).round(2)), keys=['mean', 'std'])
 
     outliers_percentage = 100. * (outliers.any(1)).sum() * 1. / outliers.shape[0]
     return res_grouped, outliers_percentage
+
+
+def landmarks_report_full(inference, gt, spacing, kls, save_plots_root):
+    landmark_errors = np.sqrt(((gt - inference)**2).sum(2))
+    landmark_errors *= spacing
+
+    errs_t = np.expand_dims(landmark_errors[:, :9].mean(1), 1)
+    errs_f = np.expand_dims(landmark_errors[:, 9:].mean(1), 1)
+    errs = np.hstack((errs_t, errs_f))
+    precision = [1, 1.5, 2, 2.5, 3]
+    outliers = np.zeros(landmark_errors.shape)
+    outliers[landmark_errors >= 10] = 1
+    rep_all, outliers_percentage = landmarks_report_partial(errs, precision, outliers, None,
+                                                            save_plot=os.path.join(save_plots_root,
+                                                                                   'all_grades.pdf'))
+
+    print(rep_all)
+    print(outliers_percentage)
+
+    for kl in range(5):
+        print(f'==> KL {kl}')
+        idx = kls == kl
+        errs_kl = errs[idx]
+        outliers_kl = outliers[idx]
+        rep_kl, outliers_percentage_kl = landmarks_report_partial(errs_kl,
+                                                                  precision,
+                                                                  outliers_kl,
+                                                                  None,
+                                                                  save_plot=os.path.join(save_plots_root,
+                                                                                         f'{kl}.pdf'))
+        print(rep_kl)
+        print(outliers_percentage_kl)
