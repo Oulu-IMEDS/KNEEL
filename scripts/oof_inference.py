@@ -4,8 +4,8 @@ import numpy as np
 import os
 import torch
 from tqdm import tqdm
-import pandas as pd
 import glob
+from termcolor import colored
 
 from kneelandmarks.model import init_model
 from kneelandmarks.data.pipeline import init_loaders
@@ -32,6 +32,7 @@ if __name__ == "__main__":
     with open(snp_session_full_path, 'rb') as f:
         snapshot_session = pickle.load(f)
 
+    print(colored('==> Experiment: ', 'red') + snapshot_session['config'][0]['experiment'][0]['experiment_description'])
     snp_args = snapshot_session['args'][0]
     for arg in vars(snp_args):
         if not hasattr(args, arg):
