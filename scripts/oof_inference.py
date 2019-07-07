@@ -33,6 +33,8 @@ if __name__ == "__main__":
         snapshot_session = pickle.load(f)
 
     print(colored('==> Experiment: ', 'red') + snapshot_session['config'][0]['experiment'][0]['experiment_description'])
+    print(colored('==> Snapshot: ', 'green') + args.snapshot)
+
     snp_args = snapshot_session['args'][0]
     for arg in vars(snp_args):
         if not hasattr(args, arg):
