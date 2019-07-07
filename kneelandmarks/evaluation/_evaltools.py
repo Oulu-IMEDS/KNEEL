@@ -62,7 +62,7 @@ def assess_errors(val_results):
     return results
 
 
-def landmarks_report(errs, outliers, precision, plot_title=None):
+def landmarks_report(errs, precision, outliers, plot_title=None):
     results = []
 
     cumulative_error_plot(errs, labels=['Tibia', 'Femur'], title=plot_title, colors=['red', 'green'])
@@ -78,4 +78,6 @@ def landmarks_report(errs, outliers, precision, plot_title=None):
 
     results = pd.DataFrame(data=results, columns=cols)
     res_grouped = pd.concat(((results.mean(0) * 100).round(2), (results.std(0) * 100).round(2)), keys=['mean', 'std'])
-    return res_grouped
+
+    outliers_percentage = 100. * (outliers.any(1)).sum() * 1. / outliers.shape[0]
+    return res_grouped, outliers_percentage

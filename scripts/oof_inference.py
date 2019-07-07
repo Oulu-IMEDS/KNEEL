@@ -38,78 +38,91 @@ if __name__ == "__main__":
         if not hasattr(args, arg):
             setattr(args, arg, getattr(snp_args, arg))
 
-    kvs = GlobalKVS()
-    kvs.update('args', args)
-    kvs.update('val_trf', snapshot_session['val_trf'][0])
-    kvs.update('train_trf', snapshot_session['train_trf'][0])
+    if not os.path.isfile(os.path.join(oof_results_dir, 'oof_results.npz')):
+        kvs = GlobalKVS()
+        kvs.update('args', args)
+        kvs.update('val_trf', snapshot_session['val_trf'][0])
+        kvs.update('train_trf', snapshot_session['train_trf'][0])
 
-    oof_inference = []
-    oof_gt = []
-    subject_ids = []
-    kls = []
-    with torch.no_grad():
-        for fold_id, train_split, val_split in snapshot_session['cv_split'][0]:
-            _, val_loader = init_loaders(train_split, val_split, sequential_val_sampler=True)
-            net = init_model()
-            snp_weigths_path = glob.glob(os.path.join(snp_full_path, f'fold_{fold_id}*.pth'))[0]
-            net.load_state_dict(torch.load(snp_weigths_path)['model'])
-            if torch.cuda.device_count() > 1:
-                net = torch.nn.DataParallel(net)
+        oof_inference = []
+        oof_gt = []
+        subject_ids = []
+        kls = []
+        with torch.no_grad():
+            for fold_id, train_split, val_split in snapshot_session['cv_split'][0]:
+                _, val_loader = init_loaders(train_split, val_split, sequential_val_sampler=True)
+                net = init_model()
+                snp_weigths_path = glob.glob(os.path.join(snp_full_path, f'fold_{fold_id}*.pth'))[0]
+                net.load_state_dict(torch.load(snp_weigths_path)['model'])
+                if torch.cuda.device_count() > 1:
+                    net = torch.nn.DataParallel(net)
 
-            for batch in tqdm(val_loader, total=len(val_loader), desc=f'Processing fold [{fold_id}]:'):
-                img = batch['img'].to('cuda')
-                out = net(img).to('cpu').numpy()
-                gt = batch['kp_gt'].numpy()
-                h, w = img.size()[-2:]
+                for batch in tqdm(val_loader, total=len(val_loader), desc=f'Processing fold [{fold_id}]:'):
+                    img = batch['img'].to('cuda')
+                    out = net(img).to('cpu').numpy()
+                    gt = batch['kp_gt'].numpy()
+                    h, w = img.size()[-2:]
 
-                out[:, :, 0] *= (w - 1)
-                out[:, :, 1] *= (h - 1)
+                    out[:, :, 0] *= (w - 1)
+                    out[:, :, 1] *= (h - 1)
 
-                gt[:, :, 0] *= (w - 1)
-                gt[:, :, 1] *= (h - 1)
+                    gt[:, :, 0] *= (w - 1)
+                    gt[:, :, 1] *= (h - 1)
 
-                if args.save_pics:
-                    for img_id in range(batch['img'].size(0)):
-                        subj_id = batch['subject_id'][img_id]
-                        side = batch['side'][img_id]
-                        kl = batch['kl'][img_id]
-                        img = batch['img'][img_id] * std_vector + mean_vector
-                        img = img.transpose(0, 2).transpose(0, 1).numpy().astype(np.uint8)
-                        save_path = os.path.join(oof_results_dir, 'pics', f'{subj_id}_{side}_{kl}.png')
-                        visualize_landmarks(img, out[img_id, :9, :], out[img_id, 9:, :], save_path=save_path)
+                    if args.save_pics:
+                        for img_id in range(batch['img'].size(0)):
+                            subj_id = batch['subject_id'][img_id]
+                            side = batch['side'][img_id]
+                            kl = batch['kl'][img_id]
+                            img = batch['img'][img_id] * std_vector + mean_vector
+                            img = img.transpose(0, 2).transpose(0, 1).numpy().astype(np.uint8)
+                            save_path = os.path.join(oof_results_dir, 'pics', f'{subj_id}_{side}_{kl}.png')
+                            visualize_landmarks(img, out[img_id, :9, :], out[img_id, 9:, :], save_path=save_path)
 
-                oof_inference.append(out)
-                oof_gt.append(gt)
-                subject_ids.append(batch['subject_id'])
-                kls.append(batch['kl'])
+                    oof_inference.append(out)
+                    oof_gt.append(gt)
+                    subject_ids.append(batch['subject_id'])
+                    kls.append(batch['kl'])
 
-    oof_inference = np.round(np.vstack(oof_inference))
-    oof_gt = np.vstack(oof_gt)
-    subject_ids = np.hstack(subject_ids)
-    kls = np.hstack(kls)
+        oof_inference = np.vstack(oof_inference)
+        oof_gt = np.vstack(oof_gt)
+        subject_ids = np.hstack(subject_ids)
+        kls = np.hstack(kls)
 
-    outliers = np.zeros(oof_inference.shape[:-1])
+        np.savez(os.path.join(oof_results_dir, 'oof_results.npz'),
+                 oof_inference=oof_inference,
+                 oof_gt=oof_gt,
+                 subject_ids=subject_ids,
+                 kls=kls)
+    else:
+        f = np.load(os.path.join(oof_results_dir, 'oof_results.npz'))
+        oof_inference = f['oof_inference']
+        oof_gt = f['oof_gt']
+        subject_ids = f['subject_ids']
+        kls = f['kls']
+
+    oof_inference = np.round(oof_inference)
+
     landmark_errors = np.sqrt(((oof_gt - oof_inference)**2).sum(2))
-    spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
+    spacing = getattr(args, f"{args.annotations}_spacing")
     landmark_errors *= spacing
-    ref_distance = 10  # 10 mm distance for outliers
-    outliers[landmark_errors >= ref_distance] = 1
-    print('==> Outliers')
-    print(subject_ids[outliers.any(1)])
 
     errs_t = np.expand_dims(landmark_errors[:, :9].mean(1), 1)
     errs_f = np.expand_dims(landmark_errors[:, 9:].mean(1), 1)
     errs = np.hstack((errs_t, errs_f))
     precision = [1, 1.5, 2, 2.5, 3]
-    rep_all = landmarks_report(errs, outliers, precision, 'All grades')
+    outliers = np.zeros(landmark_errors.shape)
+    outliers[landmark_errors >= 10] = 1
+    rep_all, outliers_percentage = landmarks_report(errs, precision, outliers, 'All grades')
+
     print(rep_all)
-    """
+    print(outliers_percentage)
+
     for kl in range(5):
         print(f'==> KL {kl}')
         idx = kls == kl
-        errs = landmark_errors[idx]
-        outliers_cur = outliers[idx, :]
-        f'KL {kl}'
-
-        print(res_grouped)
-    """
+        errs_kl = errs[idx]
+        outliers_kl = outliers[idx]
+        rep_kl, outliers_percentage_kl = landmarks_report(errs_kl, precision, outliers_kl, f'KL {kl}')
+        print(rep_kl)
+        print(outliers_percentage_kl)
