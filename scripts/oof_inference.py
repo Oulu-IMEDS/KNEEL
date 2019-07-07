@@ -11,6 +11,7 @@ from kneelandmarks.model import init_model
 from kneelandmarks.data.pipeline import init_loaders
 from kneelandmarks.evaluation import visualize_landmarks
 
+from deeppipeline.common.evaluation import cumulative_error_plot
 from deeppipeline.kvs import GlobalKVS
 
 if __name__ == "__main__":
@@ -20,9 +21,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     snp_full_path = os.path.join(args.workdir, 'snapshots', args.snapshot)
+    mean_vector, std_vector = np.load(os.path.join(args.workdir, 'snapshots', 'mean_std.npy'))
+    mean_vector = torch.from_numpy(mean_vector).unsqueeze(1).unsqueeze(1)
+    std_vector = torch.from_numpy(std_vector).unsqueeze(1).unsqueeze(1)
+
     snp_session_full_path = os.path.join(snp_full_path, 'session.pkl')
     oof_results_dir = os.path.join(args.workdir, 'snapshots', args.snapshot, 'oof_inference')
-    os.makedirs(oof_results_dir, exist_ok=True)
+    os.makedirs(os.path.join(oof_results_dir, 'pics'), exist_ok=True)
 
     with open(snp_session_full_path, 'rb') as f:
         snapshot_session = pickle.load(f)
@@ -39,6 +44,8 @@ if __name__ == "__main__":
 
     oof_inference = []
     oof_gt = []
+    subject_ids = []
+    kls = []
     with torch.no_grad():
         for fold_id, train_split, val_split in snapshot_session['cv_split'][0]:
             _, val_loader = init_loaders(train_split, val_split, sequential_val_sampler=True)
@@ -60,34 +67,52 @@ if __name__ == "__main__":
                 gt[:, :, 0] *= (w - 1)
                 gt[:, :, 1] *= (h - 1)
 
-                img = batch['img'][0]
-                img = img.transpose(0, 2).transpose(0, 1).numpy()
-                # visualize_landmarks(img, out[0, :9, :], out[0, 9:, :])
+                for img_id in range(batch['img'].size(0)):
+                    subj_id = batch['subject_id'][img_id]
+                    side = batch['side'][img_id]
+                    kl = batch['kl'][img_id]
+                    img = batch['img'][img_id] * std_vector + mean_vector
+                    img = img.transpose(0, 2).transpose(0, 1).numpy().astype(np.uint8)
+                    save_path = os.path.join(oof_results_dir, 'pics', f'{subj_id}_{side}_{kl}.png')
+                    visualize_landmarks(img, gt[0, :9, :], gt[0, 9:, :], save_path=save_path)
                 oof_inference.append(out)
                 oof_gt.append(gt)
+                subject_ids.append(batch['subject_id'])
+                kls.append(batch['kl'])
 
-    oof_inference = np.vstack(oof_inference)
+    oof_inference = np.round(np.vstack(oof_inference))
     oof_gt = np.vstack(oof_gt)
+    subject_ids = np.hstack(subject_ids)
+    kls = np.hstack(kls)
 
+    outliers = np.zeros(oof_inference.shape[:-1])
     landmark_errors = np.sqrt(((oof_gt - oof_inference)**2).sum(2))
     spacing = getattr(kvs['args'], f"{kvs['args'].annotations}_spacing")
     landmark_errors *= spacing
+    ref_distance = 10 # 10 mm distance for outliers
+    outliers[landmark_errors >= ref_distance] = 1
+    print(subject_ids[outliers.any(1)])
 
-    precision = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5]
-    results = []
-    for kp_id in range(landmark_errors.shape[1]):
-        kp_res = landmark_errors[:, kp_id]
+    #precision = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5]
+    for kl in range(5):
+        results = []
+        idx = kls == kl
+        cumulative_error_plot(landmark_errors[idx])
+        """
+        for kp_id in range(landmark_errors.shape[1]):
+            kp_res = landmark_errors[idx, kp_id]
 
-        n_outliers = np.sum(kp_res < 0) / kp_res.shape[0]
-        kp_res = kp_res[kp_res > 0]
+            n_outliers = outliers[idx, kp_id].sum() * 1. / outliers.shape[1]
+            kp_res = kp_res[kp_res > 0]
 
-        tmp = []
-        for t in precision:
-            tmp.append(np.sum((kp_res <= t)) / kp_res.shape[0])
-        tmp.append(n_outliers)
-        results.append(tmp)
-    cols = list(map(lambda x: '@ {} mm'.format(x), precision)) + ["% out.", ]
+            tmp = []
+            for t in precision:
+                tmp.append(np.sum((kp_res <= t)) / kp_res.shape[0])
+            tmp.append(n_outliers)
+            results.append(tmp)
+        cols = list(map(lambda x: '@ {} mm'.format(x), precision)) + ["% out.", ]
 
-    results = pd.DataFrame(data=results, columns=cols)
-    print(results.mean(0))
-    print(results.std(0))
+        results = pd.DataFrame(data=results, columns=cols)
+        print(f'==> KL {kl}')
+        print(results)
+        """

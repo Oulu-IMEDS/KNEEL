@@ -4,7 +4,8 @@ from matplotlib.patches import Circle
 import numpy as np
 import pandas as pd
 
-def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3):
+
+def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save_path=None):
     """
     Visualizes tibial and femoral landmarks
 
@@ -33,7 +34,11 @@ def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3):
     plt.imshow(img, cmap=plt.cm.Greys_r)
     plt.axes().add_collection(landmarks_t)
     plt.axes().add_collection(landmarks_f)
-    plt.show()
+    if save_path is None:
+        plt.show()
+    else:
+        plt.savefig(save_path, bbox_inches='tight')
+        plt.close()
 
 
 def assess_errors(val_results):
