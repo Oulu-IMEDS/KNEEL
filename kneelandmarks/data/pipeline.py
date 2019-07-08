@@ -20,7 +20,13 @@ from kneelandmarks.data.utils import solt2torchhm
 def init_augs():
     kvs = GlobalKVS()
     args = kvs['args']
+    cutout = slt.ImageCutOut(cutout_size=(int(args.cutout * args.crop_x),
+                                          int(args.cutout * args.crop_y)),
+                             p=0.5)
+    # plus-minus 1.3 pixels
+    jitter = slt.KeypointsJitter(dx_range=(-0.003, 0.003), dy_range=(-0.003, 0.003))
     ppl = tvt.Compose([
+        jitter if args.use_target_jitter else slc.Stream(),
         slc.SelectiveStream([
             slc.Stream([
                 slt.RandomFlip(p=0.5, axis=1),
@@ -53,6 +59,7 @@ def init_augs():
             slc.Stream()
         ], n=1),
         slt.ImageGammaCorrection(p=0.5, gamma_range=(0.5, 1.5)),
+        cutout if args.use_cutout else slc.Stream(),
         partial(solt2torchhm, downsample=None, sigma=None),
     ])
     kvs.update('train_trf', ppl)

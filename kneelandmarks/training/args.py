@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--loss_type', choices=['elastic', 'l2', 'l1', 'wing', 'robust'], default='wing')
     parser.add_argument('--alpha_robust', type=float, default=1.)
     parser.add_argument('--c_robust', type=float, default=1e-2)
-    parser.add_argument('--cutout', type=bool, default=0.005)
+    parser.add_argument('--cutout', type=bool, default=0.10)
     parser.add_argument('--alpha_robust_min', type=float, default=0.)
     parser.add_argument('--alpha_robust_max', type=float, default=2.)
     parser.add_argument('--multiscale_hg', type=bool, default=False)
