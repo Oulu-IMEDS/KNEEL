@@ -16,6 +16,7 @@ def load_df_menpo(df, data_dir):
     imgs = []
     k = []
     kls = []
+
     for row_id, entry in tqdm(df.iterrows(), total=df.shape[0]):
         path_img = os.path.join(data_dir, f'{entry.subject_id}_{entry.kl}_{entry.side}.png')
         img = mio.import_image(path_img, normalize=True)
@@ -28,7 +29,7 @@ def load_df_menpo(df, data_dir):
         k.append(np.expand_dims(stacked_kpts, 0))
 
     gt_landmarks = np.stack(k, 0).squeeze()
-    return imgs, gt_landmarks[:, :, [1, 0]], PointCloud(gt_landmarks.mean(0)), kls
+    return imgs, gt_landmarks[:, :, [1, 0]], PointCloud(gt_landmarks.mean(0))
 
 
 if __name__ == "__main__":
@@ -59,10 +60,13 @@ if __name__ == "__main__":
             oof_gt = []
             oof_preds = []
             oof_kls = []
+            oof_subject_ids = []
+            oof_sides = []
+
             for fold_id, train_split, val_split in snapshot_session['cv_split'][0]:
                 print('==> Loading fold data')
-                train, _, mean_shape, _ = load_df_menpo(train_split, snapshot_session['args'][0].dataset_root)
-                val, val_gt_landmarks, _, kls_val = load_df_menpo(val_split, snapshot_session['args'][0].dataset_root)
+                train, _, mean_shape = load_df_menpo(train_split, snapshot_session['args'][0].dataset_root)
+                val, val_gt_landmarks, _ = load_df_menpo(val_split, snapshot_session['args'][0].dataset_root)
                 print(f'==> Training [{model_name} | {feature_name}]:')
                 model_trained = model(train,
                                       holistic_features=feature)
@@ -75,13 +79,26 @@ if __name__ == "__main__":
 
                 oof_preds.append(np.vstack(val_pts_preds))
                 oof_gt.append(val_gt_landmarks)
-                oof_kls.extend(kls_val)
+                oof_kls.extend(val_split.kl.values.tolist())
+                oof_subject_ids.extend(val_split.subject_id.values.tolist())
+                oof_sides.extend(val_split.side.values.tolist())
 
             oof_gt = np.vstack(oof_gt)
-            oof_preds = np.vstack(oof_preds)
-            oof_kls = np.array(oof_kls)
+            oof_inference = np.vstack(oof_preds)
+            subject_ids = np.array(oof_subject_ids)
+            kls = np.array(oof_kls)
+            oof_sides = np.array(oof_sides)
+
+            np.savez(os.path.join(save_res_path, 'oof_results.npz'),
+                     oof_inference=oof_inference,
+                     oof_gt=oof_gt,
+                     oof_sides=oof_sides,
+                     subject_ids=subject_ids,
+                     kls=kls)
+
             landmarks_report_full(inference=oof_preds, gt=oof_gt,
-                                  spacing=getattr(args, f'{args.annotations}_spacing'), kls=oof_kls,
+                                  spacing=getattr(args, f'{args.annotations}_spacing'),
+                                  kls=oof_kls,
                                   save_results_root=save_res_path,
                                   precision_array=[1, 1.5, 2, 2.5], report_kl=False,
                                   experiment_desc=f'{model_name} | {feature_name}')
