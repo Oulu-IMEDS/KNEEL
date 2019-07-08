@@ -88,7 +88,8 @@ def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_pl
     return res_grouped, outliers_percentage
 
 
-def landmarks_report_full(inference, gt, spacing, kls, save_results_root, precision_array=None):
+def landmarks_report_full(inference, gt, spacing, kls, save_results_root, precision_array=None, report_kl=False,
+                          experiment_desc=None):
     landmark_errors = np.sqrt(((gt - inference) ** 2).sum(2))
     landmark_errors *= spacing
 
@@ -107,33 +108,36 @@ def landmarks_report_full(inference, gt, spacing, kls, save_results_root, precis
     outliers_percentage = np.round(outliers_percentage, 2)
     lines = list()
     lines.append('\\toprule')
-    header = ['KL', ] + rep_all['mean'].index.tolist() + ['\\% out', ]
+    header = ['Setting', ] + rep_all['mean'].index.tolist() + ['\\% out', ]
     header = list(map(lambda x: '\\textbf{'f'{x}''}', header))
     lines.append(header)
     lines.append('\\midrule')
     tmp = list()
-    tmp.append('All')
+    if experiment_desc is None:
+        tmp.append('All grades')
+    else:
+        tmp.append(experiment_desc)
     for m, s in zip(rep_all['mean'].values, rep_all['std'].values):
         tmp.append(f'${m:.2f} \\pm {s:.2f}$')
     tmp.append(f'${outliers_percentage:.2f}$')
     lines.append(tmp)
-
-    for kl in range(5):
-        idx = kls == kl
-        errs_kl = errs[idx]
-        outliers_kl = outliers[idx]
-        rep_kl, outliers_percentage_kl = landmarks_report_partial(errs_kl,
-                                                                  precision,
-                                                                  outliers_kl,
-                                                                  None,
-                                                                  save_plot=os.path.join(save_results_root,
-                                                                                         f'{kl}.pdf'))
-        tmp = list()
-        tmp.append(f'KL{kl}')
-        for m, s in zip(rep_kl['mean'].values, rep_kl['std'].values):
-            tmp.append(f'${m:.2f} \\pm {s:.2f}$')
-        tmp.append(f'${outliers_percentage_kl:.2f}$')
-        lines.append(tmp)
+    if report_kl:
+        for kl in range(5):
+            idx = kls == kl
+            errs_kl = errs[idx]
+            outliers_kl = outliers[idx]
+            rep_kl, outliers_percentage_kl = landmarks_report_partial(errs_kl,
+                                                                      precision,
+                                                                      outliers_kl,
+                                                                      None,
+                                                                      save_plot=os.path.join(save_results_root,
+                                                                                             f'{kl}.pdf'))
+            tmp = list()
+            tmp.append(f'KL{kl}')
+            for m, s in zip(rep_kl['mean'].values, rep_kl['std'].values):
+                tmp.append(f'${m:.2f} \\pm {s:.2f}$')
+            tmp.append(f'${outliers_percentage_kl:.2f}$')
+            lines.append(tmp)
     lines.append('\\bottomrule')
 
     with open(os.path.join(save_results_root, 'cv_res.tex'), 'w') as results_file:

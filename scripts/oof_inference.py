@@ -6,6 +6,7 @@ import torch
 from tqdm import tqdm
 import glob
 from termcolor import colored
+import yaml
 
 from kneelandmarks.model import init_model
 from kneelandmarks.data.pipeline import init_loaders
@@ -32,7 +33,9 @@ if __name__ == "__main__":
     with open(snp_session_full_path, 'rb') as f:
         snapshot_session = pickle.load(f)
 
-    print(colored('==> Experiment: ', 'red') + snapshot_session['config'][0]['experiment'][0]['experiment_description'])
+    with open(os.path.join(snp_full_path, 'config.yml'), 'r') as f:
+        cfg = yaml.load(f)
+    print(colored('==> Experiment: ', 'red') + cfg['experiment'][0]['experiment_description'])
     print(colored('==> Snapshot: ', 'green') + args.snapshot)
 
     snp_args = snapshot_session['args'][0]
@@ -108,4 +111,5 @@ if __name__ == "__main__":
     landmarks_report_full(inference=oof_inference, gt=oof_gt,
                           spacing=getattr(args, f'{args.annotations}_spacing'), kls=kls,
                           save_results_root=os.path.join(oof_results_dir, 'cv_results'),
-                          precision_array=[1, 2, 3])
+                          precision_array=[1, 2, 3], report_kl=False,
+                          experiment_desc=cfg['experiment'][0]['experiment_description'])
