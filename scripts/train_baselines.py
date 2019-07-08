@@ -76,7 +76,7 @@ if __name__ == "__main__":
                     fr = clm_fitter.fit_from_shape(val_img, mean_shape)
                     val_pts_preds.append(np.expand_dims(fr.final_shape.points[:, [1, 0]], 0))
 
-                oof_preds.append(np.vstack(val_pts_preds))
+                oof_preds.append(np.vstack(val_pts_preds).squeeze())
                 oof_gt.append(val_gt_landmarks)
                 oof_kls.extend(val_split.kl.values.tolist())
                 oof_subject_ids.extend(val_split.subject_id.values.tolist())
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                      subject_ids=subject_ids,
                      kls=kls)
 
-            landmarks_report_full(inference=oof_preds, gt=oof_gt,
+            landmarks_report_full(inference=oof_inference, gt=oof_gt,
                                   spacing=getattr(args, f'{args.annotations}_spacing'),
                                   kls=oof_kls,
                                   save_results_root=save_res_path,
