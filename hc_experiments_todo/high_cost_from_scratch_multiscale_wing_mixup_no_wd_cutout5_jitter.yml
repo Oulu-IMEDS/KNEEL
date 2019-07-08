@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "wing loss| multiscale | thick"
+  - experiment_description: "wing loss | multiscale | mixup | wd0| cutout5"
   - annotations : "hc"
   - seed: 42
 transforms:
@@ -10,7 +10,7 @@ transforms:
   - img_pad: 100
 model:
   - multiscale_hg: true
-  - base_width: 32
+  - base_width: 24
 training:
   - bs: 16
   - lr: 0.001
@@ -20,6 +20,9 @@ training:
   - use_swa: false
   - use_mixup: true
   - mixup_alpha: 0.75
+  - use_cutout: true
+  - cutout: 0.05
+  - use_target_jitter: true
 loss:
   - loss_type: wing
   - wing_w: 15
