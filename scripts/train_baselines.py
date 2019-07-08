@@ -64,12 +64,11 @@ if __name__ == "__main__":
             oof_sides = []
 
             for fold_id, train_split, val_split in snapshot_session['cv_split'][0]:
-                print('==> Loading fold data')
+                print(f'==> Loading fold {fold_id} data')
                 train, _, mean_shape = load_df_menpo(train_split, snapshot_session['args'][0].dataset_root)
                 val, val_gt_landmarks, _ = load_df_menpo(val_split, snapshot_session['args'][0].dataset_root)
                 print(f'==> Training [{model_name} | {feature_name}]:')
-                model_trained = model(train,
-                                      holistic_features=feature)
+                model_trained = model(train, holistic_features=feature)
 
                 clm_fitter = fitter(model_trained, n_shape=0.9)
                 val_pts_preds = []
