@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "wing loss | multiscale | mixup | wd0| cutout5"
+  - experiment_description: "wing loss | multiscale | mixup | wd0| cutout5 | jitter"
   - annotations : "hc"
   - seed: 42
 transforms:
