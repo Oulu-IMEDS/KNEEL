@@ -89,19 +89,24 @@ def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_pl
 
 
 def landmarks_report_full(inference, gt, spacing, kls, save_results_root, precision_array=None, report_kl=False,
-                          experiment_desc=None):
+                          experiment_desc=None, ann='hc'):
     landmark_errors = np.sqrt(((gt - inference) ** 2).sum(2))
     landmark_errors *= spacing
 
-    errs_t = np.expand_dims(landmark_errors[:, [0, 8]].mean(1), 1)
-    errs_f = np.expand_dims(landmark_errors[:, [9, 15]].mean(1), 1)
-    errs = np.hstack((errs_t, errs_f))
+    if ann == 'hc':
+        errs_t = np.expand_dims(landmark_errors[:, [0, 8]].mean(1), 1)
+        errs_f = np.expand_dims(landmark_errors[:, [9, 15]].mean(1), 1)
+        errs = np.hstack((errs_t, errs_f))
+    else:
+        errs = np.expand_dims(landmark_errors.squeeze(), 1)
+
     if precision_array is None:
         precision = [1, 2, 3]
     else:
         precision = precision_array
     outliers = np.zeros(landmark_errors.shape)
     outliers[landmark_errors >= 10] = 1
+
     rep_all, outliers_percentage = landmarks_report_partial(errs, precision, outliers, None,
                                                             save_plot=os.path.join(save_results_root,
                                                                                    'all_grades.pdf'))

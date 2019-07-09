@@ -112,4 +112,5 @@ if __name__ == "__main__":
                           spacing=getattr(args, f'{args.annotations}_spacing'), kls=kls,
                           save_results_root=os.path.join(oof_results_dir, 'cv_results'),
                           precision_array=[1, 1.5, 2, 2.5], report_kl=False,
-                          experiment_desc=cfg['experiment'][0]['experiment_description'])
+                          experiment_desc=cfg['experiment'][0]['experiment_description'],
+                          ann=args.annotations)
