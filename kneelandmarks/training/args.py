@@ -9,6 +9,7 @@ def parse_args():
     parser.add_argument('--experiment_config', default='')
     parser.add_argument('--multi_gpu', type=bool, default=True)
     parser.add_argument('--annotations', type=str, choices=['hc', 'lc'], default='lc')
+    parser.add_argument('--init_model_from', default='')
 
     parser.add_argument('--use_swa', type=bool, default=False)
     parser.add_argument('--use_drop', type=bool, default=False)
