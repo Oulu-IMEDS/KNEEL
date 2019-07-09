@@ -55,45 +55,50 @@ if __name__ == "__main__":
                                       (mpf.lbp, 'lbp')]:
 
             save_res_path = os.path.join(args.workdir, 'baselines', model_name, feature_name)
-            os.makedirs(save_res_path, exist_ok=True)
+            if not os.path.isfile(os.path.join(save_res_path, 'oof_results.npz')):
+                os.makedirs(save_res_path, exist_ok=True)
+                oof_gt = []
+                oof_preds = []
+                oof_kls = []
+                oof_subject_ids = []
+                oof_sides = []
 
-            oof_gt = []
-            oof_preds = []
-            oof_kls = []
-            oof_subject_ids = []
-            oof_sides = []
+                for fold_id, train_split, val_split in snapshot_session['cv_split'][0]:
+                    print(f'==> Loading fold {fold_id} data')
+                    train, _, mean_shape = load_df_menpo(train_split, snapshot_session['args'][0].dataset_root)
+                    val, val_gt_landmarks, _ = load_df_menpo(val_split, snapshot_session['args'][0].dataset_root)
+                    print(f'==> Training [{model_name} | {feature_name}]:')
+                    model_trained = model(train, holistic_features=feature)
 
-            for fold_id, train_split, val_split in snapshot_session['cv_split'][0]:
-                print(f'==> Loading fold {fold_id} data')
-                train, _, mean_shape = load_df_menpo(train_split, snapshot_session['args'][0].dataset_root)
-                val, val_gt_landmarks, _ = load_df_menpo(val_split, snapshot_session['args'][0].dataset_root)
-                print(f'==> Training [{model_name} | {feature_name}]:')
-                model_trained = model(train, holistic_features=feature)
+                    clm_fitter = fitter(model_trained, n_shape=0.9)
+                    val_pts_preds = []
+                    for val_img in tqdm(val, total=len(val), desc='Validating'):
+                        fr = clm_fitter.fit_from_shape(val_img, mean_shape)
+                        val_pts_preds.append(np.expand_dims(fr.final_shape.points[:, [1, 0]], 0))
 
-                clm_fitter = fitter(model_trained, n_shape=0.9)
-                val_pts_preds = []
-                for val_img in tqdm(val, total=len(val), desc='Validating'):
-                    fr = clm_fitter.fit_from_shape(val_img, mean_shape)
-                    val_pts_preds.append(np.expand_dims(fr.final_shape.points[:, [1, 0]], 0))
+                    oof_preds.append(np.vstack(val_pts_preds).squeeze())
+                    oof_gt.append(val_gt_landmarks)
+                    oof_kls.extend(val_split.kl.values.tolist())
+                    oof_subject_ids.extend(val_split.subject_id.values.tolist())
+                    oof_sides.extend(val_split.side.values.tolist())
 
-                oof_preds.append(np.vstack(val_pts_preds).squeeze())
-                oof_gt.append(val_gt_landmarks)
-                oof_kls.extend(val_split.kl.values.tolist())
-                oof_subject_ids.extend(val_split.subject_id.values.tolist())
-                oof_sides.extend(val_split.side.values.tolist())
+                oof_gt = np.vstack(oof_gt)
+                oof_inference = np.vstack(oof_preds)
+                subject_ids = np.array(oof_subject_ids)
+                kls = np.array(oof_kls)
+                oof_sides = np.array(oof_sides)
 
-            oof_gt = np.vstack(oof_gt)
-            oof_inference = np.vstack(oof_preds)
-            subject_ids = np.array(oof_subject_ids)
-            kls = np.array(oof_kls)
-            oof_sides = np.array(oof_sides)
-
-            np.savez(os.path.join(save_res_path, 'oof_results.npz'),
-                     oof_inference=oof_inference,
-                     oof_gt=oof_gt,
-                     oof_sides=oof_sides,
-                     subject_ids=subject_ids,
-                     kls=kls)
+                np.savez(os.path.join(save_res_path, 'oof_results.npz'),
+                         oof_inference=oof_inference,
+                         oof_gt=oof_gt,
+                         oof_sides=oof_sides,
+                         subject_ids=subject_ids,
+                         kls=kls)
+            else:
+                tmp = np.load(os.path.join(save_res_path, 'oof_results.npz'))
+                oof_inference = tmp['oof_inference']
+                oof_gt = tmp['oof_gt']
+                oof_kls = tmp['kls']
 
             landmarks_report_full(inference=oof_inference, gt=oof_gt,
                                   spacing=getattr(args, f'{args.annotations}_spacing'),

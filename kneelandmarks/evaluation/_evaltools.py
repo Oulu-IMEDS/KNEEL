@@ -93,8 +93,8 @@ def landmarks_report_full(inference, gt, spacing, kls, save_results_root, precis
     landmark_errors = np.sqrt(((gt - inference) ** 2).sum(2))
     landmark_errors *= spacing
 
-    errs_t = np.expand_dims(landmark_errors[:, :9].mean(1), 1)
-    errs_f = np.expand_dims(landmark_errors[:, 9:].mean(1), 1)
+    errs_t = np.expand_dims(landmark_errors[:, [0, 8]].mean(1), 1)
+    errs_f = np.expand_dims(landmark_errors[:, [9, 15]].mean(1), 1)
     errs = np.hstack((errs_t, errs_f))
     if precision_array is None:
         precision = [1, 2, 3]
