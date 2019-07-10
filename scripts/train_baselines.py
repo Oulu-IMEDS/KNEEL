@@ -68,12 +68,12 @@ if __name__ == "__main__":
                     train, _, mean_shape = load_df_menpo(train_split, snapshot_session['args'][0].dataset_root)
                     val, val_gt_landmarks, _ = load_df_menpo(val_split, snapshot_session['args'][0].dataset_root)
                     print(f'==> Training [{model_name} | {feature_name}]:')
-                    model_trained = model(train, holistic_features=feature)
 
-                    clm_fitter = fitter(model_trained, n_shape=0.9)
+                    model_trained = model(train, holistic_features=feature)
+                    model_fitter = fitter(model_trained, n_shape=0.9)
                     val_pts_preds = []
                     for val_img in tqdm(val, total=len(val), desc='Validating'):
-                        fr = clm_fitter.fit_from_shape(val_img, mean_shape)
+                        fr = model_fitter.fit_from_shape(val_img, mean_shape)
                         val_pts_preds.append(np.expand_dims(fr.final_shape.points[:, [1, 0]], 0))
 
                     oof_preds.append(np.vstack(val_pts_preds).squeeze())
