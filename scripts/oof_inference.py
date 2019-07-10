@@ -42,7 +42,8 @@ if __name__ == "__main__":
     for arg in vars(snp_args):
         if not hasattr(args, arg):
             setattr(args, arg, getattr(snp_args, arg))
-
+    args.init_model_from = ''
+    
     if not os.path.isfile(os.path.join(oof_results_dir, 'oof_results.npz')):
         kvs = GlobalKVS()
         kvs.update('args', args)
