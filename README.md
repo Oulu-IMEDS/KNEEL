@@ -1,11 +1,19 @@
-# KneeLandmarksSSL
-Semi-Supervised Learning and Binary Networks for Knee Anatomical Landmark Localization
+# KNEEL: Hourglass Networks for Knee Anatomical Landmark Localization
 
-What has been implemented (supervised):
+## About
+The repository includes the codes for training and testing, 
+annotations for the OAI dataset and also the pre-trained models.
 
-- [x] Data preparation
-- [x] Splitting into low- and high-cost annotations.
-- [x] Hourglass model as in the original implementation https://arxiv.org/abs/1603.06937
-- [x] Improved Multi-scale block from https://arxiv.org/pdf/1808.04803.pdf 
-- [x] 2D soft-argmax layer
-- [x] L1, L2, Elastic and Wing losses
+## How to install and run
+
+TBC
+
+## License
+If you use the annotations from this work, you must cite the following paper
+
+```
+Bibtex entry
+```
+
+The codes and the pre-trained models are not available for any commercial use 
+including research for commercial purposes.
