@@ -9,66 +9,25 @@ import argparse
 import glob
 import pandas as pd
 import numpy as np
-from kneelandmarks.data.utils import read_dicom, process_xray, read_pts, read_sas7bdata_pd
+from kneelandmarks.data.utils import save_original_with_via_landmarks, read_sas7bdata_pd
 import os
 from joblib import Parallel, delayed
-import cv2
 from tqdm import tqdm
 
 
-def worker(data_entry, args):
+def worker(data_entry, args_thread):
     subject_id, side, folder = data_entry
 
-    info = []
-
-    dicom_name = os.path.join(args.oai_data_dir, f'OAI_{args.fu}m', folder, '001')
+    dicom_name = os.path.join(args_thread.oai_data_dir, f'OAI_{args_thread.fu}m', folder, '001')
 
     # Not the most effective way, but works OK
-    landmarks_dir = glob.glob(os.path.join(args.oai_data_dir,
-                                           'landmarks_oai', args.fu,
+    landmarks_dir = glob.glob(os.path.join(args_thread.oai_data_dir,
+                                           'landmarks_oai', args_thread.fu,
                                            folder.split('/')[0], '*', '/'.join(folder.split('/')[1:])))[0]
 
-    res = read_dicom(dicom_name)
-    if res is None:
-        return info
-    img, spacing, _ = res
-    img = process_xray(img).astype(np.uint8)
-    if img.shape[0] == 0 or img.shape[1] == 0:
-        return info
+    img_save_path = os.path.join(args_thread.workdir, 'oai_images', args_thread.fu, str(subject_id) + '.png')
 
-    img_saved_path = os.path.join(args.workdir, 'oai_images', args.fu, str(subject_id) + '.png')
-    cv2.imwrite(img_saved_path, img)
-
-    row, col = img.shape
-    points = np.round(read_pts(os.path.join(landmarks_dir, '001.pts')) * 1 / spacing)
-    landmarks_fl = points[list(range(12, 25, 2)), :]
-    landmarks_tl = points[list(range(47, 64, 2)), :]
-
-    points = np.round(read_pts(os.path.join(landmarks_dir, '001_f.pts')) * 1 / spacing)
-    landmarks_fr = points[list(range(12, 25, 2)), :]
-    landmarks_tr = points[list(range(47, 64, 2)), :]
-
-    landmarks_fr[:, 0] = col - landmarks_fr[:, 0]
-    landmarks_tr[:, 0] = col - landmarks_tr[:, 0]
-
-    landmarks = {'TR': landmarks_tr, 'FR': landmarks_fr,
-                 'TL': landmarks_tl, 'FL': landmarks_fl}
-
-    result = []
-    total_landmarks = sum([landmarks[key].shape[0] for key in landmarks])
-    passed_through = 0
-
-    for bone in ['T', 'F']:
-        lndm = landmarks[bone + side]
-        for pt_id in range(lndm.shape[0]):
-            cx, cy = lndm[pt_id].astype(int)
-            result.append([str(subject_id) + '.png',
-                           os.path.getsize(img_saved_path),
-                           '{}', total_landmarks, passed_through + pt_id,
-                           '{"name":"point","cx":' + str(cx) + ',"cy":' + str(cy) + '}',
-                           '{"Bone": "' + bone + '","Side":"' + side + '"}'])
-        passed_through += lndm.shape[0]
-    return result, subject_id, spacing
+    return save_original_with_via_landmarks(subject_id, side, dicom_name, img_save_path, landmarks_dir)
 
 
 if __name__ == "__main__":
@@ -136,8 +95,9 @@ if __name__ == "__main__":
     landmarks = []
     spacings = []
     for r in res:
-        landmarks.extend(r[0])
-        spacings.append([r[1], r[2]])
+        if len(r) > 0:
+            landmarks.extend(r[0])
+            spacings.append([r[1], r[2]])
 
     via_metadata_df = pd.DataFrame(data=landmarks, columns=[
         'filename', 'file_size', 'file_attributes',

@@ -7,7 +7,7 @@ import pandas as pd
 import cv2
 from deeppipeline.common.transforms import numpy2tens
 import matplotlib.pyplot as plt
-
+import os
 
 def read_pts(fname):
     with open(fname) as f:
@@ -205,3 +205,47 @@ def get_landmarks_from_hm(pred_map, resize_x, resize_y, pad, threshold=0.9):
             res.append([-1, -1])
 
     return np.array(res)
+
+
+def save_original_with_via_landmarks(subject_id, side, dicom_name, img_save_path, landmarks_dir):
+    res = read_dicom(dicom_name)
+    if res is None:
+        return []
+    img, spacing, _ = res
+    img = process_xray(img).astype(np.uint8)
+    if img.shape[0] == 0 or img.shape[1] == 0:
+        return []
+
+    cv2.imwrite(img_save_path, img)
+
+    row, col = img.shape
+    points = np.round(read_pts(os.path.join(landmarks_dir, '001.pts')) * 1 / spacing)
+    landmarks_fl = points[list(range(12, 25, 2)), :]
+    landmarks_tl = points[list(range(47, 64, 2)), :]
+
+    points = np.round(read_pts(os.path.join(landmarks_dir, '001_f.pts')) * 1 / spacing)
+    landmarks_fr = points[list(range(12, 25, 2)), :]
+    landmarks_tr = points[list(range(47, 64, 2)), :]
+
+    landmarks_fr[:, 0] = col - landmarks_fr[:, 0]
+    landmarks_tr[:, 0] = col - landmarks_tr[:, 0]
+
+    landmarks = {'TR': landmarks_tr, 'FR': landmarks_fr,
+                 'TL': landmarks_tl, 'FL': landmarks_fl}
+
+    result = []
+    total_landmarks = sum([landmarks[key].shape[0] for key in landmarks])
+    passed_through = 0
+
+    for bone in ['T', 'F']:
+        lndm = landmarks[bone + side]
+        for pt_id in range(lndm.shape[0]):
+            cx, cy = lndm[pt_id].astype(int)
+            result.append([str(subject_id) + '.png',
+                           os.path.getsize(img_save_path),
+                           '{}', total_landmarks, passed_through + pt_id,
+                           '{"name":"point","cx":' + str(cx) + ',"cy":' + str(cy) + '}',
+                           '{"Bone": "' + bone + '","Side":"' + side + '"}'])
+        passed_through += lndm.shape[0]
+
+    return result, subject_id, spacing
