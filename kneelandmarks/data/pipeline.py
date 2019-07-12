@@ -1,13 +1,16 @@
 import numpy as np
 import torch
-from torchvision import transforms as tvt
+
 
 from functools import partial
+from torchvision import transforms as tvt
+import solt.core as slc
+import solt.transforms as slt
+
+
 import os
 from torch.utils.data import DataLoader
 
-import solt.core as slc
-import solt.transforms as slt
 
 from deeppipeline.kvs import GlobalKVS
 from deeppipeline.common.transforms import apply_by_index

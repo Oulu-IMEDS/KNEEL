@@ -9,6 +9,17 @@ from deeppipeline.common.transforms import numpy2tens
 import matplotlib.pyplot as plt
 import os
 
+
+def convert_img(img):
+    img = torch.from_numpy(img).float()
+    if len(img.shape) == 2:
+        img = img.unsqueeze(0)
+    elif len(img.shape) == 3:
+        img = img.transpose(0, 2).transpose(1, 2)
+
+    return img
+
+
 def read_pts(fname):
     with open(fname) as f:
         content = f.read()
@@ -158,12 +169,7 @@ def solt2torchhm(dc: sld.DataContainer, downsample=4, sigma=1.5):
     #                       (img.shape[1], img.shape[0])),
     #            alpha=0.5, cmap=plt.cm.jet)
     # plt.show()
-    img = torch.from_numpy(img).float()
-    if len(img.shape) == 2:
-        img = img.unsqueeze(0)
-    elif len(img.shape) == 3:
-        img = img.transpose(0, 2).transpose(1, 2)
-
+    img = convert_img(img)
     # the ground truth should stay in the image coordinate system.
     landmarks = torch.from_numpy(landmarks.data).float()
     landmarks[:, 0] /= w
