@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) | L2 | se blocks"
+  - experiment_description: "wing loss | multiscale | mixup | wd0| cutout5"
   - annotations : "hc"
   - seed: 42
 transforms:
@@ -14,10 +14,15 @@ model:
 training:
   - bs: 16
   - lr: 0.001
-  - wd: 0.0001
+  - wd: 0
   - optim: adam
   - n_epochs: 100
-  - use_se: true
-  - se_ratio: 16
+  - use_swa: false
+  - use_mixup: true
+  - mixup_alpha: 0.75
+  - use_cutout: true
+  - cutout: 0.05
 loss:
-  - loss_type: l2
+  - loss_type: wing
+  - wing_w: 15
+  - wing_c: 3

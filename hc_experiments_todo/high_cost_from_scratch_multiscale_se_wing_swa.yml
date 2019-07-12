@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) | L2 | Regular HG block"
+  - experiment_description: "High cost annotations (full set) | wing loss"
   - annotations : "hc"
   - seed: 42
 transforms:
@@ -9,14 +9,21 @@ transforms:
   - crop_y: 450
   - img_pad: 100
 model:
-  - multiscale_hg: false
+  - multiscale_hg: true
   - base_width: 24
+  - use_se: true
+  - se_ratio: 16
 training:
   - bs: 16
   - lr: 0.001
   - wd: 0.0001
   - optim: adam
   - n_epochs: 100
-  - use_swa: false
+  - use_swa: true
+  - swa_lr: 0.0005
+  - swa_start: 20
+  - swa_freq: 5
 loss:
-  - loss_type: l2
+  - loss_type: wing
+  - wing_w: 15
+  - wing_c: 3
