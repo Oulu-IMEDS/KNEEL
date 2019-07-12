@@ -22,8 +22,10 @@ from kneelandmarks.data.utils import read_dicom, process_xray, convert_img
 def wrap_slt(img):
     return sld.DataContainer((img, ), 'I')
 
+
 def unwrap_slt(dc):
     return dc.data[0]
+
 
 class LandmarkAnnotator(object):
     def __init__(self, snapshot_path, mean_std_path, data_parallel=False):
