@@ -8,7 +8,7 @@ bonefinder to via format for further refinement.
 import argparse
 import glob
 import pandas as pd
-from kneelandmarks.data.utils import save_original_with_via_landmarks
+from kneel.data.utils import save_original_with_via_landmarks
 import os
 from joblib import Parallel, delayed
 from tqdm import tqdm

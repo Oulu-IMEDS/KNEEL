@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import gc
-from kneelandmarks.evaluation import assess_errors
+from kneel.evaluation import assess_errors
 
 from deeppipeline.kvs import GlobalKVS
 from deeppipeline.common.core import mixup_pass

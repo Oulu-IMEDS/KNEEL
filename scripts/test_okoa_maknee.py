@@ -1,5 +1,5 @@
 import argparse
-from kneelandmarks.inference.lc import GlobalSearcher
+from kneel.inference.lc import GlobalSearcher
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -2,7 +2,7 @@ from torch.utils import data
 import os
 import cv2
 import numpy as np
-from kneelandmarks.data.utils import parse_landmarks
+from kneel.data.utils import parse_landmarks
 import solt.data as sld
 
 

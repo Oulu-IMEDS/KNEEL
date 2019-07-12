@@ -5,11 +5,11 @@ import os
 from tqdm import tqdm
 from menpo.shape import PointCloud
 import menpo.io as mio
-from kneelandmarks.data.utils import parse_landmarks
+from kneel.data.utils import parse_landmarks
 import menpofit.clm as clm
 import menpofit.aam as aam
 import menpo.feature as mpf
-from kneelandmarks.evaluation import landmarks_report_full
+from kneel.evaluation import landmarks_report_full
 
 
 def load_df_menpo(df, data_dir):

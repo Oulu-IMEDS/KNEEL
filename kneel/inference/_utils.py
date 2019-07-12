@@ -15,8 +15,8 @@ import solt.data as sld
 from deeppipeline.common.transforms import apply_by_index
 from deeppipeline.common.normalization import normalize_channel_wise
 
-from kneelandmarks.model import init_model_from_args
-from kneelandmarks.data.utils import read_dicom, process_xray, convert_img
+from kneel.model import init_model_from_args
+from kneel.data.utils import read_dicom, process_xray, convert_img
 
 
 def wrap_slt(img):

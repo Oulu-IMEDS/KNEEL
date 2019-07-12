@@ -16,8 +16,8 @@ from deeppipeline.kvs import GlobalKVS
 from deeppipeline.common.transforms import apply_by_index
 from deeppipeline.common.normalization import init_mean_std, normalize_channel_wise
 
-from kneelandmarks.data.dataset import LandmarkDataset
-from kneelandmarks.data.utils import solt2torchhm
+from kneel.data.dataset import LandmarkDataset
+from kneel.data.utils import solt2torchhm
 
 
 def init_augs():

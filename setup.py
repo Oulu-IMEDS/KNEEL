@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='kneelandmarks',
+    name='kneel',
     version='0.1',
     author='Aleksei Tiulpin',
     author_email='aleksei.tiulpin@oulu.fi',

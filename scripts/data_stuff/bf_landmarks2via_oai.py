@@ -9,7 +9,7 @@ import argparse
 import glob
 import pandas as pd
 import numpy as np
-from kneelandmarks.data.utils import save_original_with_via_landmarks, read_sas7bdata_pd
+from kneel.data.utils import save_original_with_via_landmarks, read_sas7bdata_pd
 import os
 from joblib import Parallel, delayed
 from tqdm import tqdm

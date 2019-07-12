@@ -8,9 +8,9 @@ import glob
 from termcolor import colored
 import yaml
 
-from kneelandmarks.model import init_model
-from kneelandmarks.data.pipeline import init_loaders
-from kneelandmarks.evaluation import visualize_landmarks, landmarks_report_full
+from kneel.model import init_model
+from kneel.data.pipeline import init_loaders
+from kneel.evaluation import visualize_landmarks, landmarks_report_full
 from deeppipeline.kvs import GlobalKVS
 
 if __name__ == "__main__":
