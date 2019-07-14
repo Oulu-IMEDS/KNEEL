@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "(low cost) wing loss | multiscale | mixup | wd0| cutout5"
+  - experiment_description: "(low cost) wing loss | multiscale | mixup | wd0| cutout10"
   - annotations : "lc"
   - seed: 42
 transforms:
@@ -21,7 +21,7 @@ training:
   - use_mixup: true
   - mixup_alpha: 0.75
   - use_cutout: true
-  - cutout: 0.05
+  - cutout: 0.1
 loss:
   - loss_type: wing
   - wing_w: 15
