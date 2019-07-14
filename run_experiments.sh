@@ -9,9 +9,9 @@ python scripts/experiments_runner.py --data_root ${WORKDIR}/high_cost_data \
                                      --log_dir ${WORKDIR}/experiment_runs_queed \
                                      --script_path scripts/train.py
 
-python scripts/train.py --dataset_root ${WORKDIR}/low_cost_data \
-                        --workdir ${WORKDIR} \
-                        --experiment lc_experiments/low_cost_from_scratch_multiscale_wing_mixup_no_wd_cutout10.yml
+#python scripts/train.py --dataset_root ${WORKDIR}/low_cost_data \
+#                        --workdir ${WORKDIR} \
+#                        --experiment lc_experiments/low_cost_from_scratch_multiscale_wing_mixup_no_wd_cutout10.yml
 
 
 for SNP in $(ls ${WORKDIR}/snapshots/ | grep "2019_")
