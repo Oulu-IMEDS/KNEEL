@@ -11,7 +11,7 @@ transforms:
 model:
   - multiscale_hg: true
   - base_width: 24
-  - init_model_from: "/media/lext/FAST/knee_landmarks/workdir/snapshotslext-devbox_2019_07_14_16_04_41"
+  - init_model_from: "/media/lext/FAST/knee_landmarks/workdir/snapshots/lext-devbox_2019_07_14_16_04_41"
 training:
   - bs: 16
   - lr: 0.001
