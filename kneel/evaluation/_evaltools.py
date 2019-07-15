@@ -37,6 +37,8 @@ def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save
     plt.imshow(img, cmap=plt.cm.Greys_r)
     plt.axes().add_collection(landmarks_t)
     plt.axes().add_collection(landmarks_f)
+    plt.xticks([])
+    plt.yticks([])
     if save_path is None:
         plt.show()
     else:

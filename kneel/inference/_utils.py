@@ -5,6 +5,8 @@ import os
 import pickle
 import numpy as np
 
+import torch.nn.parallel as parallel
+
 from functools import partial
 from torchvision import transforms as tvt
 import solt.core as slc
@@ -37,22 +39,23 @@ def unwrap_slt(dc, norm_trf):
 
 
 class LandmarkAnnotator(object):
-    def __init__(self, snapshot_path, mean_std_path, data_parallel=False, device='cpu'):
+    def __init__(self, snapshot_path, mean_std_path, device='cpu'):
         self.fold_snapshots = glob.glob(os.path.join(snapshot_path, 'fold_*.pth'))
         self.models = []
-        self.data_parallel = data_parallel
         self.device = device
         with open(os.path.join(snapshot_path, 'session.pkl'), 'rb') as f:
             snapshot_session = pickle.load(f)
 
         snp_args = snapshot_session['args'][0]
-
+        dummy = torch.FloatTensor(1, 3, snp_args.crop_x, snp_args.crop_y).to(device=self.device)
         for snp_name in self.fold_snapshots:
             net = init_model_from_args(snp_args)
             snp = torch.load(snp_name)['model']
             net.load_state_dict(snp)
             net.eval()
             net.to(self.device)
+            with torch.no_grad():
+                net = torch.jit.trace(net, dummy)
             self.models.append(net)
 
         mean_vector, std_vector = np.load(mean_std_path)
