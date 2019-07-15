@@ -1,5 +1,7 @@
 import argparse
-from kneel.inference.lc import GlobalSearcher
+import glob
+import os
+from kneel.inference import LandmarkAnnotator
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -9,7 +11,9 @@ if __name__ == "__main__":
     parser.add_argument('--mean_std_path', default='')
     args = parser.parse_args()
 
-    global_searcher = GlobalSearcher(snapshot_path=args.lc_snapshot_path,
-                                     mean_std_path=args.mean_std_path)
+    global_searcher = LandmarkAnnotator(snapshot_path=args.lc_snapshot_path,
+                                        mean_std_path=args.mean_std_path)
 
+    imgs = glob.glob(os.path.join(args.dataset_path, '*'))
+    global_searcher.predict_img(imgs[1])
 
