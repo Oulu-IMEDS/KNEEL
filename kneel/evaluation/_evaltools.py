@@ -7,6 +7,7 @@ from deeppipeline.common.evaluation import cumulative_error_plot
 import os
 import sys
 
+
 def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save_path=None):
     """
     Visualizes tibial and femoral landmarks
