@@ -47,7 +47,7 @@ class LandmarkAnnotator(object):
             snapshot_session = pickle.load(f)
 
         snp_args = snapshot_session['args'][0]
-        dummy = torch.FloatTensor(1, 3, snp_args.crop_x, snp_args.crop_y).to(device=self.device)
+        dummy = torch.FloatTensor(2, 3, snp_args.crop_x, snp_args.crop_y).to(device=self.device)
         for snp_name in self.fold_snapshots:
             net = init_model_from_args(snp_args)
             snp = torch.load(snp_name)['model']
