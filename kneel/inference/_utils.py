@@ -99,6 +99,8 @@ class LandmarkAnnotator(object):
                     r_pred = model(img[0].unsqueeze(0)).to('cpu').numpy().squeeze()
                     l_pred = model(img[1].unsqueeze(0)).to('cpu').numpy().squeeze()
                     print(r_pred, l_pred)
+                else:
+                    raise NotImplementedError
 
 
 
