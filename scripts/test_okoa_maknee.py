@@ -30,7 +30,9 @@ if __name__ == "__main__":
                                        device='cuda')
 
     imgs = glob.glob(os.path.join(args.dataset_path, args.dataset, '*'))
+    imgs.sort()
     predicted_landmarks = []
+    case_names = []
     for img_name in tqdm(imgs, total=len(imgs), desc=f'Annotating..'):
         img, orig_spacing, h_orig, w_orig, img_orig = global_searcher.read_dicom(img_name,
                                                                                  new_spacing=global_searcher.img_spacing,
@@ -61,10 +63,12 @@ if __name__ == "__main__":
         landmarks[1, :, :] += global_coords[1, :]
 
         predicted_landmarks.append(np.expand_dims(landmarks, 0))
+        case_names.append(img_name.split('/')[-1].split('.')[0])
 
     predicted_landmarks = np.vstack(predicted_landmarks)
     save_dir = os.path.join(args.workdir, args.dataset+'_inference')
     os.makedirs(save_dir, exist_ok=True)
     np.savez(os.path.join(save_dir, f'preds_unpadded{"_refined" if args.refine else ""}.npz'),
-             preds=predicted_landmarks)
+             preds=predicted_landmarks,
+             imgs=case_names)
 
