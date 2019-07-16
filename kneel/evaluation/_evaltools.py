@@ -33,12 +33,12 @@ def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save
     landmarks_t = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_t), color='red')
     landmarks_f = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_f), color='green')
 
-    plt.figure(figsize=(figsize, figsize))
-    plt.imshow(img, cmap=plt.cm.Greys_r)
-    plt.axes().add_collection(landmarks_t)
-    plt.axes().add_collection(landmarks_f)
-    plt.xticks([])
-    plt.yticks([])
+    fig, ax = plt.subplots(1, 1, figsize=(figsize, figsize))
+    ax.imshow(img, cmap=plt.cm.Greys_r)
+    ax.add_collection(landmarks_t)
+    ax.add_collection(landmarks_f)
+    ax.set_xticks([])
+    ax.set_yticks([])
     if save_path is None:
         plt.show()
     else:

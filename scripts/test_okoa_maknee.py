@@ -51,12 +51,12 @@ if __name__ == "__main__":
             # prediction for refined centers
             landmarks, right_roi_orig, left_roi_orig = local_searcher.predict_local(img_orig, global_coords,
                                                                                     roi_size_px, orig_spacing)
-        landmarks[~np.isnan(landmarks)] -= args.pad
 
         if args.visualize:
             visualize_landmarks(right_roi_orig, landmarks[0, :9], landmarks[0, 9:], radius=5)
             visualize_landmarks(left_roi_orig, landmarks[1, :9], landmarks[1, 9:], radius=5)
 
+        landmarks -= args.pad
         landmarks[0, :, :] += global_coords[0, :]
         landmarks[1, :, :] += global_coords[1, :]
 
