@@ -59,8 +59,8 @@ if __name__ == "__main__":
             visualize_landmarks(left_roi_orig, landmarks[1, :9], landmarks[1, 9:], radius=5)
 
         landmarks -= args.pad
-        landmarks[0, :, :] += global_coords[0, :]
-        landmarks[1, :, :] += global_coords[1, :]
+        landmarks[0, :, :] += global_coords[0, :] - roi_size_px // 2
+        landmarks[1, :, :] += global_coords[1, :] - roi_size_px // 2
 
         predicted_landmarks.append(np.expand_dims(landmarks, 0))
         case_names.append(img_name.split('/')[-1].split('.')[0])
