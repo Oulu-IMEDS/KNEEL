@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument('--lc_snapshot_path', default='')
     parser.add_argument('--hc_snapshot_path', default='')
     parser.add_argument('--roi_size_mm', type=int, default=140)
+    parser.add_argument('--pad', type=int, default=300)
     parser.add_argument('--refine', type=bool, default=False)
     parser.add_argument('--visualize', type=bool, default=False)
     parser.add_argument('--mean_std_path', default='')
@@ -37,6 +38,9 @@ if __name__ == "__main__":
         # First pass of knee joint center estimation
         roi_size_px = int(args.roi_size_mm * 1. / orig_spacing)
         global_coords = global_searcher.predict_img(img, h_orig, w_orig)
+        img_orig = LandmarkAnnotator.pad_img(img_orig, args.pad if args.pad != 0 else None)
+        global_coords += args.pad
+        h_orig, w_orig = img_orig.shape
         landmarks, right_roi_orig, left_roi_orig = local_searcher.predict_local(img_orig, global_coords,
                                                                                 roi_size_px, orig_spacing)
 
@@ -47,6 +51,7 @@ if __name__ == "__main__":
             # prediction for refined centers
             landmarks, right_roi_orig, left_roi_orig = local_searcher.predict_local(img_orig, global_coords,
                                                                                     roi_size_px, orig_spacing)
+        landmarks[~np.isnan(landmarks)] -= args.pad
 
         if args.visualize:
             visualize_landmarks(right_roi_orig, landmarks[0, :9], landmarks[0, 9:], radius=5)
@@ -58,4 +63,8 @@ if __name__ == "__main__":
         predicted_landmarks.append(np.expand_dims(landmarks, 0))
 
     predicted_landmarks = np.vstack(predicted_landmarks)
-    print(predicted_landmarks.shape)
+    save_dir = os.path.join(args.workdir, args.dataset+'_inference')
+    os.makedirs(save_dir, exist_ok=True)
+    np.savez(os.path.join(save_dir, f'preds_unpadded{"_refined" if args.refine else ""}.npz'),
+             preds=predicted_landmarks)
+

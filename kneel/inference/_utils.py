@@ -5,8 +5,6 @@ import os
 import pickle
 import numpy as np
 
-import torch.nn.parallel as parallel
-
 from functools import partial
 from torchvision import transforms as tvt
 import solt.core as slc
@@ -38,26 +36,43 @@ def unwrap_slt(dc, norm_trf):
     return torch.stack(norm_trf(list(map(convert_img, dc.data))))
 
 
+class NFoldInferenceModel(torch.nn.Module):
+    def __init__(self, models):
+        super(NFoldInferenceModel, self).__init__()
+        modules = dict()
+        for idx, m in enumerate(models):
+            modules[f'model_{idx+1}'] = m
+        self.n_models = len(models)
+        self.__dict__['_modules'] = modules
+
+    def forward(self, x):
+        res = 0
+        for model_id in range(1, self.n_models+1):
+            res += getattr(self, f'model_{model_id}')(x)
+        return res / self.n_models
+
+
 class LandmarkAnnotator(object):
     def __init__(self, snapshot_path, mean_std_path, device='cpu'):
         self.fold_snapshots = glob.glob(os.path.join(snapshot_path, 'fold_*.pth'))
-        self.models = []
+        models = []
         self.device = device
         with open(os.path.join(snapshot_path, 'session.pkl'), 'rb') as f:
             snapshot_session = pickle.load(f)
 
         snp_args = snapshot_session['args'][0]
-        dummy = torch.FloatTensor(2, 3, snp_args.crop_x, snp_args.crop_y).to(device=self.device)
+
         for snp_name in self.fold_snapshots:
             net = init_model_from_args(snp_args)
             snp = torch.load(snp_name)['model']
             net.load_state_dict(snp)
-            net.eval()
-            net.to(self.device)
-            with torch.no_grad():
-                net = torch.jit.trace(net, dummy)
-            self.models.append(net)
+            models.append(net)
+        dummy = torch.FloatTensor(2, 3, snp_args.crop_x, snp_args.crop_y).to(device=self.device)
+        self.net = NFoldInferenceModel(models).to(self.device)
+        self.net.eval()
 
+        with torch.no_grad():
+            self.net = torch.jit.trace(self.net, dummy)
         mean_vector, std_vector = np.load(mean_std_path)
 
         self.annotator_type = snp_args.annotations
@@ -76,17 +91,23 @@ class LandmarkAnnotator(object):
         ])
 
     @staticmethod
+    def pad_img(img, pad):
+        if pad is not None:
+            row, col = img.shape
+            tmp = np.zeros((row + 2 * pad, col + 2 * pad))
+            tmp[pad:pad + row, pad:pad + col] = img
+            return tmp
+        else:
+            return img
+
+    @staticmethod
     def read_dicom(img_path, new_spacing, return_orig=False, pad_img=None):
         res = read_dicom(img_path)
         if res is None:
             return []
         img_orig, orig_spacing, _ = res
         img_orig = process_xray(img_orig).astype(np.uint8)
-        if pad_img is not None:
-            row, col = img_orig.shape
-            tmp = np.zeros((row + 2 * pad_img, col + 2 * pad_img))
-            tmp[pad_img:pad_img + row, pad_img:pad_img + col] = img_orig
-            img_orig = tmp
+        img_orig = LandmarkAnnotator.pad_img(img_orig, pad_img)
 
         h_orig, w_orig = img_orig.shape
 
@@ -146,16 +167,8 @@ class LandmarkAnnotator(object):
     def batch_inference(self, batch: torch.tensor):
         if batch.device != self.device:
             batch = batch.to(self.device)
-
-        with torch.no_grad():
-            res = None
-            for model in self.models:
-                pred = model(batch)
-                if res is None:
-                    res = pred
-                else:
-                    res += pred
-            res /= len(self.models)
+            with torch.no_grad():
+                res = self.net(batch)
         return res.to('cpu').numpy()
 
     def predict_local(self, img, center_coords, roi_size_px, orig_spacing):
@@ -164,13 +177,36 @@ class LandmarkAnnotator(object):
         right_roi_orig, left_roi_orig = LandmarkAnnotator.localize_left_right_rois(img, roi_size_px, center_coords)
 
         left_roi_orig = left_roi_orig[:, ::-1]
-        right_roi = LandmarkAnnotator.resize_to_spacing(right_roi_orig, orig_spacing, self.img_spacing)
-        left_roi = LandmarkAnnotator.resize_to_spacing(left_roi_orig, orig_spacing, self.img_spacing)
+        try:
+            right_roi = LandmarkAnnotator.resize_to_spacing(right_roi_orig, orig_spacing, self.img_spacing)
+        except cv2.error:
+            right_roi = None
 
-        landmarks = self.predict_img((right_roi, left_roi),
-                                     h_orig=roi_size_px,
-                                     w_orig=roi_size_px)
-        left_roi_orig = left_roi_orig[:, ::-1]
-        landmarks[1, :, 0] = roi_size_px - landmarks[1, :, 0]
+        try:
+            left_roi = LandmarkAnnotator.resize_to_spacing(left_roi_orig, orig_spacing, self.img_spacing)
+        except cv2.error:
+            left_roi = None
+
+        if left_roi is None and right_roi is None:
+            return None, None, None
+        elif left_roi is None:
+            landmarks = self.predict_img((right_roi, right_roi.copy()),
+                                         h_orig=roi_size_px,
+                                         w_orig=roi_size_px)
+            landmarks[1] = np.nan
+            left_roi_orig = None
+        elif right_roi is None:
+            landmarks = self.predict_img((left_roi.copy(), left_roi),
+                                         h_orig=roi_size_px,
+                                         w_orig=roi_size_px)
+            landmarks[0] = np.nan
+            right_roi_orig = None
+        else:
+            landmarks = self.predict_img((right_roi, left_roi),
+                                         h_orig=roi_size_px,
+                                         w_orig=roi_size_px)
+
+            left_roi_orig = left_roi_orig[:, ::-1]
+            landmarks[1, :, 0] = roi_size_px - landmarks[1, :, 0]
 
         return landmarks, right_roi_orig, left_roi_orig
