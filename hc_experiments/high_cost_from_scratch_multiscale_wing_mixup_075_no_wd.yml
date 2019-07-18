@@ -1,5 +1,5 @@
 experiment:
-  - experiment_description: "High cost annotations (full set) | wing loss"
+  - experiment_description: "wing loss | mixup 0.75 | no-wd"
   - annotations : "hc"
   - seed: 42
 transforms:

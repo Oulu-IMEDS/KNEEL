@@ -2,19 +2,27 @@ import argparse
 import pandas as pd
 import glob
 import os
+import numpy as np
+from kneel.evaluation import visualize_landmarks
+import matplotlib.pyplot as plt
+from kneel.data.utils import parse_landmarks
+import cv2
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--lc_annotations', default='')
-    parser.add_argument('--hc_annotations', default='')
-    parser.add_argument('--kls', default='')
+    parser.add_argument('--annotations', default='')
     parser.add_argument('--lc_images', default='')
     parser.add_argument('--hc_images', default='')
+    parser.add_argument('--save_dir', default='')
     args = parser.parse_args()
 
-    kls = pd.read_csv(args.kls)
-    lc_annotations = pd.read_csv(args.lc_annotations)
-    hc_annotations = pd.read_csv(args.hc_annotations)
-
-    hc_images = glob.glob(os.path.join(args.hc_images, '*'))
-    lc_images = glob.glob(os.path.join(args.lc_images, '*'))
+    np.random.seed(1234567)
+    annotations = pd.read_csv(args.annotations)
+    pics_dir = os.path.join(args.save_dir, 'paper_pics')
+    os.makedirs(pics_dir, exist_ok=True)
+    for kl in range(5):
+        subject_id, side, kl, t_lnd, f_lnd, _, center = annotations[annotations.kl == kl].sample(1, axis=0).iloc[0]
+        t_lnd, f_lnd = parse_landmarks(t_lnd), parse_landmarks(f_lnd)
+        img = cv2.imread(os.path.join(args.hc_images, f'{subject_id}_{kl}_{side}.png'), 0)
+        visualize_landmarks(img, t_lnd, f_lnd, save_path=os.path.join(pics_dir, f'hc_{kl}.pdf'))

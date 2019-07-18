@@ -29,16 +29,10 @@ class HourglassNet(nn.Module):
         self.hourglass = Hourglass(hg_depth, bw * 4, bw * 4, bw * 8, upmode, multiscale_hg_block,
                                    se=se, se_ratio=se_ratio)
 
-        if use_drop:
-            self.mixer = nn.Sequential(nn.Dropout2d(p=0.25),
-                                       conv_block_1x1(bw * 8, bw * 8),
-                                       nn.Dropout2d(p=0.25),
-                                       conv_block_1x1(bw * 8, bw * 4))
-        else:
-            self.mixer = nn.Sequential(nn.Dropout2d(p=0.25),
-                                       conv_block_1x1(bw * 8, bw * 8),
-                                       nn.Dropout2d(p=0.25),
-                                       conv_block_1x1(bw * 8, bw * 4))
+        self.mixer = nn.Sequential(nn.Dropout2d(p=0.25),
+                                   conv_block_1x1(bw * 8, bw * 8),
+                                   nn.Dropout2d(p=0.25),
+                                   conv_block_1x1(bw * 8, bw * 4))
 
         self.out_block = nn.Sequential(nn.Conv2d(bw * 4, n_outputs, kernel_size=1, padding=0))
         self.sagm = SoftArgmax2D()
