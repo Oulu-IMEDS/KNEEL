@@ -30,13 +30,17 @@ def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save
         Makes and image plot with overlayed landmarks.
 
     """
-    landmarks_t = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_t), color='red')
-    landmarks_f = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_f), color='green')
+    if landmarks_f is not None:
+        landmarks_t = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_t), color='red')
+    if landmarks_f is not None:
+        landmarks_f = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_f), color='green')
 
     fig, ax = plt.subplots(1, 1, figsize=(figsize, figsize))
     ax.imshow(img, cmap=plt.cm.Greys_r)
-    ax.add_collection(landmarks_t)
-    ax.add_collection(landmarks_f)
+    if landmarks_t is not None:
+        ax.add_collection(landmarks_t)
+    if landmarks_f is not None:
+        ax.add_collection(landmarks_f)
     ax.set_xticks([])
     ax.set_yticks([])
     if save_path is None:

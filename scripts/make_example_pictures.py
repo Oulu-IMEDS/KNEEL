@@ -24,5 +24,7 @@ if __name__ == '__main__':
     for kl in range(5):
         subject_id, side, kl, t_lnd, f_lnd, _, center = annotations[annotations.kl == kl].sample(1, axis=0).iloc[0]
         t_lnd, f_lnd = parse_landmarks(t_lnd), parse_landmarks(f_lnd)
-        img = cv2.imread(os.path.join(args.hc_images, f'{subject_id}_{kl}_{side}.png'), 0)
+        fname = os.path.join(args.hc_images, f'{subject_id}_{kl}_{side}.png')
+        print(fname, kl)
+        img = cv2.imread(fname, 0)
         visualize_landmarks(img, t_lnd, f_lnd, save_path=os.path.join(pics_dir, f'hc_{kl}.pdf'))
