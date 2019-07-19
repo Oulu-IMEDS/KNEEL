@@ -122,11 +122,11 @@ if __name__ == "__main__":
         outliers[landmark_errors >= 10] = 1
         precision = [1, 1.5, 2, 2.5]
 
-        errs_t = np.expand_dims(landmark_errors[:, [0, 5, 8]].mean(1), 1)
+        errs_t = np.expand_dims(landmark_errors[:, [0, 4, 8]].mean(1), 1)
         errs_f = np.expand_dims(landmark_errors[:, [9, 12, 15]].mean(1), 1)
         errs = np.hstack((errs_t, errs_f))
 
-        errs_tf = landmark_errors[:, [0, 5, 8, 9, 12, 15]].mean(1)
+        errs_tf = landmark_errors[:, [0, 4, 8, 9, 12, 15]].mean(1)
         plt.step(np.sort(errs_tf), np.arange(errs_tf.shape[0]) / errs_tf.shape[0], color=color, label=label)
         plt.xlim(0, 5)
         plt.ylim(0, 1)

@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
         if args.refine:
             # refinement
-            centers_d = np.array([roi_size_px // 2, roi_size_px // 2]) - landmarks[:, 5]
+            centers_d = np.array([roi_size_px // 2, roi_size_px // 2]) - landmarks[:, 4]
             global_coords -= centers_d
             # prediction for refined centers
             landmarks, right_roi_orig, left_roi_orig = local_searcher.predict_local(img_orig, global_coords,
