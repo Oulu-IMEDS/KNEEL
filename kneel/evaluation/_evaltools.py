@@ -70,10 +70,12 @@ def assess_errors(val_results):
     return results
 
 
-def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_plot=None):
+def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_plot=None, labels=None):
     results = []
+    if labels is None:
+        labels = ['Tibia', 'Femur']
 
-    cumulative_error_plot(errs, labels=['Tibia', 'Femur'],
+    cumulative_error_plot(errs, labels=labels,
                           title=plot_title,
                           colors=['blue', 'red'],
                           save_plot=save_plot)
@@ -116,7 +118,8 @@ def landmarks_report_full(inference, gt, spacing, kls, save_results_root, precis
 
     rep_all, outliers_percentage = landmarks_report_partial(errs, precision, outliers, None,
                                                             save_plot=os.path.join(save_results_root,
-                                                                                   'all_grades.pdf'))
+                                                                                   'all_grades.pdf'),
+                                                            labels=None if ann == 'hc' else ['ROI localization', ])
     outliers_percentage = np.round(outliers_percentage, 2)
     lines = list()
     lines.append('\\toprule')
