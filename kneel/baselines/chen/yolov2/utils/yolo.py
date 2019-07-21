@@ -125,6 +125,7 @@ def postprocess_bbox(bbox_pred, iou_pred, prob_pred, im_shape, cfg, thresh=0.05)
 
     return bbox_pred, scores, cls_inds
 
+
 def _bbox_targets_perimage(im_shape, gt_boxes, cls_inds, dontcare_areas, cfg):
     # num_classes, num_anchors = cfg.num_classes, cfg.num_anchors
     # anchors = cfg.anchors

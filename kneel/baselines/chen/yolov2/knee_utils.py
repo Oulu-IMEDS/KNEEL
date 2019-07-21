@@ -5,9 +5,10 @@ import numpy as np
 import cv2
 import deepdish as dd
 
-from .proj_utils.torch_utils import to_device
-from .utils.cython_yolo import yolo_to_bbox
-from .proj_utils.local_utils import change_val
+from kneel.baselines.chen.yolov2.proj_utils.torch_utils import to_device
+from kneel.baselines.chen.yolov2.utils.cython_yolo import yolo_to_bbox
+from kneel.baselines.chen.yolov2.proj_utils.local_utils import change_val
+
 
 # knee detection and classification forward
 def knee_det_cls(cls, img, cfg=None):
@@ -41,7 +42,6 @@ def evaluate_det_cls(gt_boxes, gt_classes, pr_boxes, pr_classes, num=5, overlap_
     all_box_num = len(pr_boxes)
     pred_matrix = np.zeros((num, num), dtype=np.int)
     overlap_list = []
-
 
     box_num = 0
     for gt_box, gt_class in zip(gt_boxes, gt_classes):

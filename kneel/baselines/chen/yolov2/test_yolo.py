@@ -48,7 +48,7 @@ def test_eng(dataloader, model_root, save_root, net, args, cfg):
         gt_boxes = cur_boxes.squeeze().numpy()
         gt_classes = cur_classes.squeeze().numpy()
         _, true_num, total_num, overlap_list, _ = evaluate_det_cls(gt_boxes, gt_classes, bboxes, cls_inds,
-                                                                cfg.num_classes, cfg.JIthresh)
+                                                                   cfg.num_classes, cfg.JIthresh)
         # save_pred_box_coors(save_root, gt_boxes, gt_classes, bboxes, cur_name[0])
         if total_num != 2: # Check wrong detection file
             print("Name: {}, num: {}".format(cur_name[0], total_num))

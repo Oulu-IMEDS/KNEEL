@@ -5,7 +5,10 @@ import numpy as np
 from kneel.inference import LandmarkAnnotator
 from kneel.evaluation import visualize_landmarks
 from tqdm import tqdm
+import cv2
 
+cv2.ocl.setUseOpenCL(False)
+cv2.setNumThreads(0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
