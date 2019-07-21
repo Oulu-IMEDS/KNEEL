@@ -27,22 +27,17 @@ cv2.setNumThreads(0)
 
 
 def load_dicom(img_path):
-    # res = read_dicom(img_path)
-    # if res is None:
-    #     return []
-    # img, orig_spacing, _ = res
-    # img *= 1.
-    # img -= img.min()
-    # img /= img.max()
-    # img *= 255
-    #
-    # h_orig, w_orig = img.shape
-    #
-    # img = np.expand_dims(img, 2)
-    # img = np.dstack((img, img, img))
-    #
-    # img = LandmarkAnnotator.resize_to_spacing(img, spacing=orig_spacing, new_spacing=0.14)
-    img, orig_spacing, h_orig, w_orig = LandmarkAnnotator.read_dicom(img_path, 0.14)
+    res = read_dicom(img_path)
+    if res is None:
+        return []
+    img, orig_spacing, _ = res
+    img /= img.max()*1.
+    img *= 255
+
+    h_orig, w_orig = img.shape
+
+    img = LandmarkAnnotator.resize_to_spacing(img, spacing=orig_spacing, new_spacing=0.14)
+    #img, orig_spacing, h_orig, w_orig = LandmarkAnnotator.read_dicom(img_path, 0.14)
     img = np.expand_dims(img, 2)
     img = np.dstack((img, img, img))
     img = img.astype(np.uint8)
@@ -104,5 +99,5 @@ if __name__ == '__main__':
             cv2.rectangle(img_cur, tuple(bboxes[i, [0, 1]]),
                           tuple(bboxes[i, [1, 2]]),
                           (255, 0, 0), 1)
-        #plt.imshow(img_cur)
-        #plt.show()
+        # plt.imshow(img_cur)
+        # plt.show()
