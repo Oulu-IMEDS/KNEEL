@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
             path = os.path.join(args.datasets_dir, args.dataset, cases_cur[case_idx])
             img, spacing, _, _ = LandmarkAnnotator.read_dicom(path, new_spacing=None)
-            roi_size_px = int(140 * 1. / spacing)
+            roi_size_px = int(115 * 1. / spacing)
             tmp = np.expand_dims(landmarks_t[4], 0).copy()
 
             _, roi = LandmarkAnnotator.localize_left_right_rois(img, roi_size_px, np.vstack((tmp, tmp)))
@@ -200,7 +200,7 @@ if __name__ == "__main__":
 
             ax.set_xticks([])
             ax.set_yticks([])
-            plt.ylim(300, 150)
+            plt.ylim(250, 150)
             plt.tight_layout()
 
             save_dir = '/'.join(args.saved_results.split('/')[:-1])

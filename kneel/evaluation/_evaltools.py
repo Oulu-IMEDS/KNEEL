@@ -72,7 +72,7 @@ def assess_errors(val_results):
 
 def make_test_report_comparison(args, landmark_errors_bf, landmark_errors_ours, suffix=None):
     plt.figure(figsize=(8, 8))
-    plt.rcParams['font.size'] = 20
+    plt.rcParams['font.size'] = 24
     save_dir = '/'.join(args.saved_results.split('/')[:-1])
     if suffix is None:
         suffix = ''
@@ -106,7 +106,8 @@ def make_test_report_comparison(args, landmark_errors_bf, landmark_errors_ours, 
         print(' & '.join(tmp))
 
     plt.xlabel('Distance threshold [mm]')
-    plt.yticks(np.arange(0, 1.01, 0.1), np.arange(0, 110, 10))
+    plt.xlim(0, 5)
+    plt.yticks(np.arange(0, 1.01, 0.2), np.arange(0, 110, 20))
     plt.ylabel('Recall [%]')
     plt.legend(loc=4)
     plt.grid()
@@ -122,7 +123,7 @@ def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_pl
     cumulative_error_plot(errs, labels=labels,
                           title=plot_title,
                           colors=['blue', 'red'],
-                          save_plot=save_plot)
+                          save_plot=save_plot, font_size=24)
 
     for kp_id in range(errs.shape[1]):
         kp_res = errs[:, kp_id]

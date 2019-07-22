@@ -27,4 +27,4 @@ if __name__ == '__main__':
         fname = os.path.join(args.hc_images, f'{subject_id}_{kl}_{side}.png')
         print(fname, kl)
         img = cv2.imread(fname, 0)
-        visualize_landmarks(img, t_lnd, f_lnd, save_path=os.path.join(pics_dir, f'hc_{kl}.pdf'))
+        visualize_landmarks(img, t_lnd, f_lnd, save_path=os.path.join(pics_dir, f'hc-{kl}.pdf'))
