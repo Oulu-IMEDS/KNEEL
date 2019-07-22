@@ -119,6 +119,8 @@ class LandmarkAnnotator(object):
 
     @staticmethod
     def resize_to_spacing(img, spacing, new_spacing):
+        if new_spacing is None:
+            return img
         scale = spacing / new_spacing
         return cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
 

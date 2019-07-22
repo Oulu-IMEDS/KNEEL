@@ -110,7 +110,7 @@ def make_test_report_comparison(args, landmark_errors_bf, landmark_errors_ours, 
     plt.ylabel('Recall [%]')
     plt.legend(loc=4)
     plt.grid()
-    plt.savefig(os.path.join(save_dir, f'{args.dataset}_inference{suffix}.pdf'), bbox_inches='tight')
+    plt.savefig(os.path.join(save_dir, f'{args.dataset}-inference{suffix}.pdf'), bbox_inches='tight')
     plt.show()
 
 
