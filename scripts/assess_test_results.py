@@ -2,10 +2,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import json
-from kneel.evaluation import landmarks_report_partial
-import os
-import matplotlib.pyplot as plt
-
+from kneel.evaluation import make_test_report_comparison
 # Implants are excluded from the evaluation
 data_ignore = {'OKOA': [('60', 'R')],
                'MAKNEE': [('PA_074', 'R'),
@@ -34,11 +31,13 @@ if __name__ == "__main__":
     parser.add_argument('--bf_data', default='')
     parser.add_argument('--spacings', default='')
     parser.add_argument('--dataset', default='')
+    parser.add_argument('--kls', default='')
     parser.add_argument('--exclude_center', type=bool, default=False)
 
     args = parser.parse_args()
 
     gt = pd.read_csv(args.gt_data)
+    kls = pd.read_csv(args.kls)
     gt['x'] = gt.region_shape_attributes.apply(lambda x: int(json.loads(x)['cx']), 1)
     gt['y'] = gt.region_shape_attributes.apply(lambda x: int(json.loads(x)['cy']), 1)
     gt['Bone'] = gt.region_attributes.apply(lambda x: json.loads(x)['Bone'], 1)
@@ -53,7 +52,13 @@ if __name__ == "__main__":
     spacings = pd.read_csv(args.spacings)
     if args.dataset == 'OKOA':
         spacings.ID = spacings.ID.apply(lambda x: f'{x:02d}', 1)
+        kls.ID = kls.ID.apply(lambda x: f'{x:02d}', 1)
+
+    if args.dataset == 'MAKNEE':
+        kls.ID = kls.ID.apply(lambda x: f'PA_{x:03d}', 1)
+
     spacings = {entry.ID: float(entry.spacing) for _, entry in spacings.iterrows()}
+    kls = {entry.ID: (entry.KLR, entry.KLL) for _, entry in kls.iterrows()}
     res = np.load(args.saved_results)
     preds = res['preds']
     imgs_ids = res['imgs']
@@ -66,6 +71,7 @@ if __name__ == "__main__":
     spacings_arr = []
     bf_preds_per_knee = []
     bf_ann = {grp_name: grp for grp_name, grp in bf_preds.groupby('filename')}
+    kls_per_knee = []
 
     for fname, grp in gt.groupby('filename'):
         img_id = fname.split('.')[0]
@@ -85,6 +91,7 @@ if __name__ == "__main__":
 
             to_add = np.vstack((bf_preds_cur['TR'], bf_preds_cur['FR']))
             bf_preds_per_knee.append(np.expand_dims(to_add, 0))
+            kls_per_knee.append(int(kls[img_id][0]))
 
         if (img_id, 'L') not in exclude:
             sides.append('L')
@@ -95,10 +102,12 @@ if __name__ == "__main__":
 
             to_add = np.vstack((bf_preds_cur['TL'], bf_preds_cur['FL']))
             bf_preds_per_knee.append(np.expand_dims(to_add, 0))
+            kls_per_knee.append(int(kls[img_id][1]))
 
     gt = np.vstack(gt_per_knee)
     inference_per_knee = np.vstack(inference_per_knee)
     bf_inference_per_knee = np.vstack(bf_preds_per_knee)
+    kls_per_knee = np.array(kls_per_knee)
 
     sides = np.array(sides)
     spacings_arr = np.expand_dims(np.array(spacings_arr), 1)
@@ -111,40 +120,9 @@ if __name__ == "__main__":
 
     print(args.saved_results)
 
-    plt.figure(figsize=(8, 8))
-    plt.rcParams['font.size'] = 20
-    save_dir = '/'.join(args.saved_results.split('/')[:-1])
-    for landmark_errors, label, color in zip([landmark_errors_bf, landmark_errors_ours],
-                                             ['BoneFinder', 'Ours'],
-                                             ['blue', 'red']):
+    make_test_report_comparison(args, landmark_errors_bf, landmark_errors_ours)
+    make_test_report_comparison(args, landmark_errors_bf[kls_per_knee < 2, :],
+                                landmark_errors_ours[kls_per_knee < 2, :], '_no_oa')
 
-        outliers = np.zeros(landmark_errors.shape)
-        outliers[landmark_errors >= 10] = 1
-        precision = [1, 1.5, 2, 2.5]
-
-        errs_t = np.expand_dims(landmark_errors[:, [0, 4, 8]].mean(1), 1)
-        errs_f = np.expand_dims(landmark_errors[:, [9, 12, 15]].mean(1), 1)
-        errs = np.hstack((errs_t, errs_f))
-
-        errs_tf = landmark_errors[:, [0, 4, 8, 9, 12, 15]].mean(1)
-        plt.step(np.sort(errs_tf), np.arange(errs_tf.shape[0]) / errs_tf.shape[0], color=color, label=label)
-        plt.xlim(0, 5)
-        plt.ylim(0, 1)
-
-        save_plot_path = os.path.join(save_dir, f'{label}_{args.dataset}_inference.pdf')
-        res_aggregated, outliers_percentage = landmarks_report_partial(errs, precision, outliers, None,
-                                                                       save_plot=save_plot_path)
-
-        tmp = []
-        for m, s in zip(res_aggregated['mean'].values, res_aggregated['std'].values):
-            tmp.append(f'${m:.2f} \\pm {s:.2f}$')
-        tmp.append(f'${outliers_percentage:.2f}$')
-        print(label)
-        print(' & '.join(tmp))
-    plt.xlabel('Distance threshold [mm]')
-    plt.yticks(np.arange(0, 1.01, 0.1), np.arange(0, 110, 10))
-    plt.ylabel('Recall [%]')
-    plt.legend(loc=4)
-    plt.grid()
-    plt.savefig(os.path.join(save_dir, f'{args.dataset}_inference.pdf'), bbox_inches='tight')
-    plt.show()
+    make_test_report_comparison(args, landmark_errors_bf[kls_per_knee >= 2, :],
+                                landmark_errors_ours[kls_per_knee >= 2, :], '_oa')

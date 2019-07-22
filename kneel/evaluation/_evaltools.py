@@ -70,6 +70,50 @@ def assess_errors(val_results):
     return results
 
 
+def make_test_report_comparison(args, landmark_errors_bf, landmark_errors_ours, suffix=None):
+    plt.figure(figsize=(8, 8))
+    plt.rcParams['font.size'] = 20
+    save_dir = '/'.join(args.saved_results.split('/')[:-1])
+    if suffix is None:
+        suffix = ''
+
+    for landmark_errors, label, color in zip([landmark_errors_bf, landmark_errors_ours],
+                                             ['BoneFinder', 'Ours'],
+                                             ['blue', 'red']):
+
+        outliers = np.zeros(landmark_errors.shape)
+        outliers[landmark_errors >= 10] = 1
+        precision = [1, 1.5, 2, 2.5]
+
+        errs_t = np.expand_dims(landmark_errors[:, [0, 4, 8]].mean(1), 1)
+        errs_f = np.expand_dims(landmark_errors[:, [9, 12, 15]].mean(1), 1)
+        errs = np.hstack((errs_t, errs_f))
+
+        errs_tf = landmark_errors[:, [0, 4, 8, 9, 12, 15]].mean(1)
+        plt.step(np.sort(errs_tf), np.arange(errs_tf.shape[0]) / errs_tf.shape[0], color=color, label=label)
+        plt.xlim(0, 5)
+        plt.ylim(0, 1)
+
+        save_plot_path = os.path.join(save_dir, f'{label}_{args.dataset}_inference.pdf')
+        res_aggregated, outliers_percentage = landmarks_report_partial(errs, precision, outliers, None,
+                                                                       save_plot=save_plot_path)
+
+        tmp = []
+        for m, s in zip(res_aggregated['mean'].values, res_aggregated['std'].values):
+            tmp.append(f'${m:.2f} \\pm {s:.2f}$')
+        tmp.append(f'${outliers_percentage:.2f}$')
+        print(label)
+        print(' & '.join(tmp))
+
+    plt.xlabel('Distance threshold [mm]')
+    plt.yticks(np.arange(0, 1.01, 0.1), np.arange(0, 110, 10))
+    plt.ylabel('Recall [%]')
+    plt.legend(loc=4)
+    plt.grid()
+    plt.savefig(os.path.join(save_dir, f'{args.dataset}_inference{suffix}.pdf'), bbox_inches='tight')
+    plt.show()
+
+
 def landmarks_report_partial(errs, precision, outliers, plot_title=None, save_plot=None, labels=None):
     results = []
     if labels is None:
