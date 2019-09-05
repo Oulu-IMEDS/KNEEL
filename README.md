@@ -9,15 +9,10 @@ In this paper we tackled the problem of anatomical landmark localization in knee
 <img src="pics/network_arch.png" width="800"/> 
 </center>
 
-To train this model, we propose to use mixup, coutout augmentation and dropout and **no weight decay**. We further propose to use transfer learning from low-cost annotations (knee joint centers on the whole knee radiographs). In the paper, we showed that our transfer learning technique allows to significantly bost the performance. Furthermore, having the models trained to work with the while radiographs and the localized knee joint areas, we were able to build a full pipeline for landmark localization:
-
-<center>
+To train this model, we propose to use mixup, coutout augmentation and dropout and **no weight decay**. We further propose to use transfer learning from low-cost annotations (knee joint centers on the whole knee radiographs). In the paper, we showed that our transfer learning technique allows to significantly bost the performance. Furthermore, having the models trained to work with the while radiographs and the localized knee joint areas, we were able to build a full pipeline for landmark localization.
+<p align=center>
 <img src="pics/pipeline.png" width="400"/> 
-</center>
-
-
-
-
+</p>
 
 ### What's included
 
