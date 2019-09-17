@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+snapshots_release/*
+snapshots_release.tar.xz
 # C extensions
 *.so
 .idea/*

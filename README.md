@@ -26,13 +26,41 @@ Details will be coming soon...
 We provide the script and the annotations for creating the cropped ROIs from the original DICOM images. The annotations are stored in the file `annotations/bf_landmarks_1_0.3.csv`. The script for creating the high cost and the low cost datasets from the raw DICOM data are stored in `scripts/data_stuff/create_datasets_from_via.py`. Follow the arguments to better understand what it does.
 
 ### Reproducing the experiments from the paper
-All the experiments done in the paper were made with PyTorch 1.0.0 and anaconda.
+All the experiments done in the paper were made with PyTorch 1.1.0 and anaconda.
 To run the experiments, simply copy the content of the folder `hc_experiments` into `hc_experiments_todo`. Set up the necessary environment variables in the file `run_experiments.sh` and then run this script. The code is written to leverage all the available GPU reseource running 1 experiment per card.
 
 ## Inference on your data
-Follow the script `scripts/test_okoa_maknee.py` to see how to do the inference. More detailed description and a Docker image are coming soon.
 
-Pre-trained models are already available: http://mipt-ml.oulu.fi/models/KNEEL/.
+1. Go to the root of this repository and build the docker image `docker build -t kneel_inference .`.
+2. Download the models: `sh fetch_snapshots.sh`
+3. Build the docker image `docker build -t kneel_inference -f Dockerfile.xxx .`, where `xxx` is either `cpu` or `gpu`.
+4. Run the inference as follows:
+
+```
+docker run -it --name landmark_inference --rm \                                                                                                                                                               ✔  118  18:33:53
+            -v <WORKDIR_LOCATION>:/workdir/ \
+            -v $(pwd)/snapshots_release:/snapshots/:ro \
+            -v <DATA_LOCATION>:/data/:ro --ipc=host \
+            kneel_inference python -u inference_new_data.py \
+            --dataset_path /data/ \
+            --dataset <DATASET_NAME> \
+            --workdir /workdir/ \
+            --mean_std_path /snapshots/mean_std.npy\
+            --lc_snapshot_path /snapshots/lext-devbox_2019_07_14_16_04_41 \
+            --hc_snapshot_path /snapshots/lext-devbox_2019_07_14_19_25_40 \
+            --device <DEVICE> \
+            --refine True
+
+```
+
+In the command above, you need to replace:
+
+* `<WORKDIR_LOCATION>` - where you will be saving the results.
+* `<DATA_LOCATION>` where the data are located. 
+* `<DATASET_NAME>` the name of the folder containing DICOM images. It should be a sub-folder of `<DATA_LOCATION>`.
+* `<DEVICE>` - `cuda`or `cpu` depending on the platform of execution and on how you built the docker image.
+
+The assembled docker images will soon be released.
 
 ## License
 If you use the annotations from this work, you must cite the following paper (Accepted to ICCV 2019 VRMI Workshop)

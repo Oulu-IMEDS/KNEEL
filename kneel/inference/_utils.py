@@ -63,14 +63,15 @@ class LandmarkAnnotator(object):
         snp_args = snapshot_session['args'][0]
 
         for snp_name in self.fold_snapshots:
+            print(f'==> Loading {snp_name}')
             net = init_model_from_args(snp_args)
-            snp = torch.load(snp_name)['model']
+            snp = torch.load(snp_name, map_location=device)['model']
             net.load_state_dict(snp)
             models.append(net)
         dummy = torch.FloatTensor(2, 3, snp_args.crop_x, snp_args.crop_y).to(device=self.device)
         self.net = NFoldInferenceModel(models).to(self.device)
         self.net.eval()
-
+        print(f'==> Optimizing with torch.jit.trace')
         with torch.no_grad():
             self.net = torch.jit.trace(self.net, dummy)
         mean_vector, std_vector = np.load(mean_std_path)

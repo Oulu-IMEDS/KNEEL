@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('--hc_snapshot_path', default='')
     parser.add_argument('--roi_size_mm', type=int, default=140)
     parser.add_argument('--pad', type=int, default=300)
+    parser.add_argument('--device',  default='cuda')
     parser.add_argument('--refine', type=bool, default=False)
     parser.add_argument('--visualize', type=bool, default=False)
     parser.add_argument('--mean_std_path', default='')
@@ -26,11 +27,11 @@ if __name__ == "__main__":
 
     global_searcher = LandmarkAnnotator(snapshot_path=args.lc_snapshot_path,
                                         mean_std_path=args.mean_std_path,
-                                        device='cuda')
+                                        device=args.device)
 
     local_searcher = LandmarkAnnotator(snapshot_path=args.hc_snapshot_path,
                                        mean_std_path=args.mean_std_path,
-                                       device='cuda')
+                                       device=args.device)
 
     imgs = glob.glob(os.path.join(args.dataset_path, args.dataset, '*'))
     imgs.sort()
