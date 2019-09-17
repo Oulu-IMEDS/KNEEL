@@ -31,10 +31,9 @@ To run the experiments, simply copy the content of the folder `hc_experiments` i
 
 ## Inference on your data
 
-1. Go to the root of this repository and build the docker image `docker build -t kneel_inference .`.
+1. Build the docker image `docker build -t kneel_inference -f Dockerfile.xxx .`, where `xxx` is either `cpu` or `gpu`.
 2. Download the models: `sh fetch_snapshots.sh`
-3. Build the docker image `docker build -t kneel_inference -f Dockerfile.xxx .`, where `xxx` is either `cpu` or `gpu`.
-4. Run the inference as follows:
+3. Run the inference as follows (remember to use `nvidia-docker` for cuda support):
 
 ```
 docker run -it --name landmark_inference --rm \                                                                                                                                                               ✔  118  18:33:53
