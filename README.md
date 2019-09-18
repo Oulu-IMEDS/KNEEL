@@ -59,7 +59,7 @@ In the command above, you need to replace:
 * `<DATASET_NAME>` the name of the folder containing DICOM images. It should be a sub-folder of `<DATA_LOCATION>`.
 * `<DEVICE>` - `cuda`or `cpu` depending on the platform of execution and on how you built the docker image.
 
-The assembled docker images will soon be released.
+You can fetch the prebuild docker images as `docker pull lextdocker/kneel:cpu` or `docker pull lextdocker/kneel:gpu` for CPU or GPU, respectively. Please note that your nvidia driver must be compatibel with cuda 10.
 
 ## License
 If you use the annotations from this work, you must cite the following paper (Accepted to ICCV 2019 VRMI Workshop)

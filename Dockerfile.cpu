@@ -4,32 +4,9 @@ MAINTAINER Aleksei Tiulpin, University of Oulu, Version 1.0
 # Setting up the system
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install -y libgtk2.0-dev
-RUN apt-get update && apt-get install -y --no-install-recommends \
-         build-essential \
-         cmake \
-         git \
-         curl \
-         vim \
-         ca-certificates \
-         libjpeg-dev \
-         libpng-dev \
-	     unzip \
-	     zip \
-	     locales \
-	     emacs \
-	     libgl1-mesa-glx \
-	     openssh-server \
-	     screen \
-	     libturbojpeg \
-	     rsync \
-         wget
+RUN apt-get install -y --no-install-recommends curl libgtk2.0-dev locales ca-certificates && rm -rf /var/lib/apt/lists/*
 
-RUN locale-gen --purge en_US.UTF-8
-RUN echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
-RUN dpkg-reconfigure --frontend=noninteractive locales
-
-RUN apt-get install -y libgeotiff-dev
+RUN locale-gen --purge en_US.UTF-8 && echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
 
 # Making sure that the locales are correctly installed
 ENV LC_CTYPE en_US.UTF-8
@@ -38,19 +15,10 @@ ENV LANG en_US.UTF-8
 RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 RUN chmod +x ~/miniconda.sh && ~/miniconda.sh -b -p /opt/conda && rm ~/miniconda.sh
 ENV PATH=/opt/conda/bin:${PATH}
-RUN conda update -n base conda
-RUN conda install -y numpy scipy matplotlib
-
-# Fixing the matplotlib backend issues
-RUN mkdir -p /root/.config/matplotlib/
-RUN echo "backend : Agg" > /root/.config/matplotlib/matplotlibrc
 
 # Installing the dependencies
-RUN pip install tqdm termcolor opencv-python
-RUN pip install torch==1.1.0 torchvision==0.3.0
+RUN pip install tqdm termcolor opencv-python torch==1.1.0 torchvision==0.3.0 pydicom sas7bdat matplotlib
 RUN pip install deep-pipeline==0.2.5
-RUN pip install pydicom
-RUN pip install sas7bdat
 
 # Setting up the package
 RUN mkdir -p /opt/pkg/
