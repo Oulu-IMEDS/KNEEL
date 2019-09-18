@@ -38,9 +38,12 @@ if __name__ == "__main__":
     predicted_landmarks = []
     case_names = []
     for img_name in tqdm(imgs, total=len(imgs), desc=f'Annotating..'):
-        img, orig_spacing, h_orig, w_orig, img_orig = global_searcher.read_dicom(img_name,
-                                                                                 new_spacing=global_searcher.img_spacing,
-                                                                                 return_orig=True)
+        res = global_searcher.read_dicom(img_name, new_spacing=global_searcher.img_spacing, return_orig=True)
+        if len(res) > 0:
+            img, orig_spacing, h_orig, w_orig, img_orig = res
+        else:
+            continue
+
         # First pass of knee joint center estimation
         roi_size_px = int(args.roi_size_mm * 1. / orig_spacing)
         global_coords = global_searcher.predict_img(img, h_orig, w_orig)
