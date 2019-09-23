@@ -32,7 +32,7 @@ def read_dicom(filename):
     Reads a dicom file
     Parameters
     ----------
-    filename : str
+    filename : str or pydicom.dataset.FileDataset
         Full path to the image
     Returns
     -------
@@ -40,10 +40,14 @@ def read_dicom(filename):
         Image itself as uint16, spacing, and the DICOM metadata
     """
 
-    try:
-        data = dicom.read_file(filename)
-    except:
-        return None
+    if isinstance(filename, str):
+        try:
+            data = dicom.read_file(filename)
+        except:
+            return None
+    elif isinstance(filename, dicom.dataset.FileDataset):
+        data = filename
+
     img = np.frombuffer(data.PixelData, dtype=np.uint16).copy().astype(np.float64)
 
     if data.PhotometricInterpretation == 'MONOCHROME1':
