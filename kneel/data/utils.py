@@ -72,6 +72,7 @@ def read_dicom(filename, spacing_none_mode=True):
         try:
             data = dicom.read_file(filename)
         except:
+            raise UserWarning('Failed to read the dicom.')
             return None
     elif isinstance(filename, dicom.dataset.FileDataset):
         data = filename
@@ -83,9 +84,17 @@ def read_dicom(filename, spacing_none_mode=True):
     try:
         img = img.reshape((data.Rows, data.Columns))
     except:
+        raise UserWarning('Could not reshape the image while reading!')
         return None
 
     spacing = dicom_img_spacing(data)
+    if spacing_none_mode:
+        if spacing is not None:
+            return img, spacing, data
+        else:
+            raise UserWarning('Could not read the spacing information!')
+            return None
+
     return img, spacing, data
 
 
