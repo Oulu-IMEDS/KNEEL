@@ -259,3 +259,48 @@ def save_original_with_via_landmarks(subject_id, side, dicom_name, img_save_path
         passed_through += lndm.shape[0]
 
     return result, subject_id, spacing
+
+
+def save_based_on_exising_annotations(entry, read_dicom_from_meta):
+    sizemm, pad = entry.sizemm, entry.pad
+    subject_id, kl, side = entry.subject_id, entry.kl, entry.side
+
+    hc_spacing, lc_spacing = entry.high_cost_spacing, entry.low_cost_spacing
+
+    to_save_hc = entry.to_save_high_cost_img
+    to_save_lc = entry.to_save_low_cost_img
+    os.makedirs(to_save_hc, exist_ok=True)
+    os.makedirs(to_save_lc, exist_ok=True)
+
+    img_original, spacing = read_dicom_from_meta(entry)
+
+    # Setting up the scales and spacings
+    scale = spacing / hc_spacing
+    scale_lc = spacing / lc_spacing
+    spacing = hc_spacing
+    # Setting up the bounding box width in pixels (for the rescaled high cost image from which the ROI will be extracted
+    bbox_width_pix = int(sizemm / spacing)
+    # Resizing the original image to moderate resolution so that the problem is computationally tractable
+    img = cv2.resize(img_original, (int(img_original.shape[1] * scale), int(img_original.shape[0] * scale)))
+    # Resizing the original image so that we have a large pixel spacing sufficient for ROI localization
+    img_lc = cv2.resize(img_original, (int(img_original.shape[1] * scale_lc), int(img_original.shape[0] * scale_lc)))
+
+    # Padding the image. Essential for ROI extraction
+    row, col = img.shape
+    tmp = np.zeros((row + 2 * pad, col + 2 * pad))
+    tmp[pad:pad + row, pad:pad + col] = img
+    img = tmp
+    # Getting the coordinates of the center (in the coordinate frame of img)
+    cx, cy = map(int, entry.center.split(','))
+    # Cropping the image the way it should be cropped
+    localized_img = img[cy - bbox_width_pix // 2:cy + bbox_width_pix // 2,
+                        cx - bbox_width_pix // 2:cx + bbox_width_pix // 2]
+
+    # Saving the localized ROI
+    if side == 'L':
+        localized_img = cv2.flip(localized_img, 1)
+    cv2.imwrite(os.path.join(to_save_hc, f'{subject_id}_{kl}_{side}.png'), localized_img)
+    # Saving the image for low-cost_annotation it does not yet exist
+    if not os.path.isfile(os.path.join(to_save_lc, f'{subject_id}.png')):
+        cv2.imwrite(os.path.join(to_save_lc, f'{subject_id}.png'), img_lc)
+

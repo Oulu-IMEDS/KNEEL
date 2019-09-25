@@ -40,6 +40,9 @@ python create_train_dataset_from_oai.py --oai_xrays_path <OAI_PATH> \
 After you have created the dataset, you can follow the script `run_experiments.sh` and setup the `--data_root` parameter to be
 the same as `<path the images corresponding to high/low-cost annotations>`.
 
+Note: you will likely see warnings `UserWarning: Incorrect value for Specific Character Set 'ISO_2022_IR_6' - assuming 'ISO 2022 IR 6'
+  _warn_about_invalid_encoding(encoding, patched)`. Don't pay attention to that, as these are the artifacts coming from DICOM metadata.
+
 ### Reproducing the experiments from the paper
 All the experiments done in the paper were made with PyTorch 1.1.0 and anaconda.
 To run the experiments, simply copy the content of the folder `hc_experiments` into `hc_experiments_todo`. 
