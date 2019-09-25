@@ -42,7 +42,9 @@ the same as `<path the images corresponding to high/low-cost annotations>`.
 
 ### Reproducing the experiments from the paper
 All the experiments done in the paper were made with PyTorch 1.1.0 and anaconda.
-To run the experiments, simply copy the content of the folder `hc_experiments` into `hc_experiments_todo`. Set up the necessary environment variables in the file `run_experiments.sh` and then run this script. The code is written to leverage all the available GPU reseource running 1 experiment per card.
+To run the experiments, simply copy the content of the folder `hc_experiments` into `hc_experiments_todo`. 
+Set up the necessary environment variables in the file `run_experiments.sh` and then run this script. 
+The code is written to leverage all the available GPU resources running 1 experiment per card.
 
 ## Inference on your data
 
