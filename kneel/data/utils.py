@@ -27,13 +27,41 @@ def read_pts(fname):
     return arr
 
 
-def read_dicom(filename):
+def dicom_img_spacing(data):
+    spacing = None
+
+    for spacing_param in ["Imager Pixel Spacing", "ImagerPixelSpacing", "PixelSpacing", "Pixel Spacing"]:
+        if hasattr(data, spacing_param):
+            spacing_attr_value = getattr(data, spacing_param)
+            if isinstance(spacing_attr_value, str):
+                if isfloat(spacing_attr_value):
+                    spacing = float(spacing_attr_value)
+                else:
+                    spacing = float(spacing_attr_value.split()[0])
+            elif isinstance(spacing_attr_value, dicom.multival.MultiValue):
+                if len(spacing_attr_value) != 2:
+                    return None
+                spacing = list(map(lambda x: float(x), spacing_attr_value))[0]
+            elif isinstance(spacing_attr_value, float):
+                spacing = spacing_attr_value
+        else:
+            continue
+
+        if spacing is not None:
+            break
+    return spacing
+
+
+def read_dicom(filename, spacing_none_mode=True):
     """
     Reads a dicom file
     Parameters
     ----------
     filename : str or pydicom.dataset.FileDataset
         Full path to the image
+    spacing_none_mode: bool
+        Whether to return None if spacing info is not present. When False the output of the function
+        will be None only if there are any issues with the image.
     Returns
     -------
     out : tuple
@@ -57,26 +85,9 @@ def read_dicom(filename):
     except:
         return None
 
-    try:
-        if isinstance(data.ImagerPixelSpacing, str):
-            data.ImagerPixelSpacing = data.ImagerPixelSpacing.split()
-    except:
-        pass
+    spacing = dicom_img_spacing(data)
+    return img, spacing, data
 
-    try:
-        if isinstance(data.PixelSpacing, str):
-            data.PixelSpacing = data.PixelSpacing.split()
-    except:
-        pass
-
-    try:
-        return img, float(data.ImagerPixelSpacing[0]), data
-    except:
-        pass
-    try:
-        return img, float(data.PixelSpacing[0]), data
-    except:
-        return None
 
 
 def process_xray(img, cut_min=5, cut_max=99, multiplier=255):
