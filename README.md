@@ -20,10 +20,25 @@ The repository includes the codes for training and testing,
 annotations for the OAI dataset and also the links to the pre-trained models.
 
 ## How to install and run
-### Installation
-Details will be coming soon...
 ### Preparing the training data
-We provide the script and the annotations for creating the cropped ROIs from the original DICOM images. The annotations are stored in the file `annotations/bf_landmarks_1_0.3.csv`. The script for creating the high cost and the low cost datasets from the raw DICOM data are stored in `scripts/data_stuff/create_datasets_from_via.py`. Follow the arguments to better understand what it does.
+Download the OAI baseline images from https://nda.nih.gov/oai/. The access to the images is free and painless.
+You just need to register and provide the information about yourself and agree with the terms of data use.
+
+We provide the script and the annotations for creating the cropped ROIs from the original DICOM images. 
+The annotations are stored in the file `annotations/bf_landmarks_1_0.3.csv`. 
+The script for creating the high cost and the low cost datasets 
+from the raw DICOM data is stored in `scripts/data_stuff/create_train_dataset_from_oai.py`.
+
+Execute the aforementioned script as follows:
+```
+python create_train_dataset_from_oai.py --oai_xrays_path <OAI_PATH> \
+                                        --annotations_path ../annotations \
+                                        --to_save_high_cost_img <path the images corresponding to high-cost annotations> \
+                                        --to_save_low_cost_img <path the images corresponding to low-cost annotations>
+```
+
+After you have created the dataset, you can follow the script `run_experiments.sh` and setup the `--data_root` parameter to be
+the same as `<path the images corresponding to high/low-cost annotations>`.
 
 ### Reproducing the experiments from the paper
 All the experiments done in the paper were made with PyTorch 1.1.0 and anaconda.
