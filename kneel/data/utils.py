@@ -304,3 +304,78 @@ def save_based_on_exising_annotations(entry, read_dicom_from_meta):
     if not os.path.isfile(os.path.join(to_save_lc, f'{subject_id}.png')):
         cv2.imwrite(os.path.join(to_save_lc, f'{subject_id}.png'), img_lc)
 
+
+def save_original_from_via_annotations(data_entry, args, get_image_callback):
+    filename, annotations, klr, kll, spacing = data_entry
+    subject_id = filename.split('.')[0]
+
+    pad = args.pad
+    sizemm = args.sizemm
+
+    img_original, spacing = get_image_callback(data_entry, spacing)
+
+    scale = spacing / args.high_cost_spacing
+    scale_lc = spacing / args.low_cost_spacing
+    spacing = args.high_cost_spacing
+
+    bbox_width_pix = int(sizemm / spacing)
+    img = cv2.resize(img_original, (int(img_original.shape[1] * scale), int(img_original.shape[0] * scale)))
+    img_lc = cv2.resize(img_original, (int(img_original.shape[1] * scale_lc), int(img_original.shape[0] * scale_lc)))
+
+    row, col = img.shape
+    tmp = np.zeros((row + 2 * pad, col + 2 * pad))
+    tmp[pad:pad + row, pad:pad + col] = img
+    img = tmp
+    row, col = img.shape
+
+    landmarks = {}
+    centers = {}
+    bboxes = {}
+    sides = []
+    for side, grp_side in annotations.groupby('Side'):
+        for bone, grp_side_bone in grp_side.groupby('Bone'):
+            points = grp_side_bone[['x', 'y']].values * scale + pad
+            landmarks[bone + side] = points
+            if bone == 'T':
+                # Defining the centers
+                cx, cy = landmarks[f'T{side}'][landmarks[f'T{side}'].shape[0] // 2, :].astype(int)
+                centers[side] = (cx, cy)
+                # Defining the bounding boxes for the cropped images
+                bboxes[side] = [cx - bbox_width_pix // 2, cy - bbox_width_pix // 2,
+                                cx + bbox_width_pix // 2, cy + bbox_width_pix // 2]
+
+        sides.append(side)
+
+    res = []
+    for side in sides:
+        kl = klr if side == 'R' else kll
+
+        if side == 'R':
+            localized_img = img[bboxes['R'][1]:bboxes['R'][3], bboxes['R'][0]:bboxes['R'][2]]
+        else:
+            localized_img = cv2.flip(img[bboxes['L'][1]:bboxes['L'][3], bboxes['L'][0]:bboxes['L'][2]], 1)
+
+        landmarks[f'T{side}'] -= bboxes[side][:2]
+        landmarks[f'F{side}'] -= bboxes[side][:2]
+
+        if side == 'L':
+            # Inverting the left landmarks
+            landmarks[f'T{side}'][:, 0] = bbox_width_pix - landmarks[f'T{side}'][:, 0]
+            landmarks[f'F{side}'][:, 0] = bbox_width_pix - landmarks[f'F{side}'][:, 0]
+
+        landmarks[f'T{side}'] = np.round(landmarks[f'T{side}']).astype(int)
+        landmarks[f'F{side}'] = np.round(landmarks[f'F{side}']).astype(int)
+
+        cv2.imwrite(os.path.join(args.to_save_high_cost_img, f'{subject_id}_{kl}_{side}.png'), localized_img)
+        if not os.path.isfile(os.path.join(args.to_save_low_cost_img, f'{subject_id}.png')):
+            cv2.imwrite(os.path.join(args.to_save_low_cost_img, f'{subject_id}.png'), img_lc)
+
+        tibial_landmarks = ''.join(map(lambda x: '{},{},'.format(*x), landmarks[f'T{side}']))[:-1]
+        femoral_landmarks = ''.join(map(lambda x: '{},{},'.format(*x), landmarks[f'F{side}']))[:-1]
+
+        tmp = [subject_id, side, kl, tibial_landmarks, femoral_landmarks,
+               f"{bboxes[side][0]},{bboxes[side][1]},{bboxes[side][2]},{bboxes[side][3]}",
+               f"{centers[side][0]},{centers[side][1]}"]
+        res.append(tmp)
+
+    return res
