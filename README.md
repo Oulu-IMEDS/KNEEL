@@ -36,9 +36,10 @@ python create_train_dataset_from_oai.py --oai_xrays_path <OAI_PATH> \
                                         --to_save_high_cost_img <path the images corresponding to high-cost annotations> \
                                         --to_save_low_cost_img <path the images corresponding to low-cost annotations>
 ```
+Here, `<OAI_PATH>` should correspond to the folder with OAI baseline images containing the file `contents.csv`.
 
 After you have created the dataset, you can follow the script `run_experiments.sh` and setup the `--data_root` parameter to be
-the same as `<path the images corresponding to high/low-cost annotations>`.
+the same as `<path the images corresponding to high/low-cost annotations>`. 
 
 Note: you will likely see warnings `UserWarning: Incorrect value for Specific Character Set 'ISO_2022_IR_6' - assuming 'ISO 2022 IR 6'
   _warn_about_invalid_encoding(encoding, patched)`. Don't pay attention to that, as these are the artifacts coming from DICOM metadata.
