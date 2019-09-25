@@ -92,11 +92,13 @@ class LandmarkAnnotator(object):
         ])
 
     @staticmethod
-    def pad_img(img, pad):
+    def pad_img(img, pad):        
         if pad is not None:
+            if not isinstance(pad, tuple):
+                pad = (pad, pad)
             row, col = img.shape
-            tmp = np.zeros((row + 2 * pad, col + 2 * pad))
-            tmp[pad:pad + row, pad:pad + col] = img
+            tmp = np.zeros((row + 2 * pad[0], col + 2 * pad[1]))
+            tmp[pad[0]:pad[0] + row, pad[1]:pad[1] + col] = img
             return tmp
         else:
             return img
