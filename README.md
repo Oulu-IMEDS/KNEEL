@@ -50,6 +50,8 @@ To run the experiments, simply copy the content of the folder `hc_experiments` i
 Set up the necessary environment variables in the file `run_experiments.sh` and then run this script. 
 The code is written to leverage all the available GPU resources running 1 experiment per card.
 
+In order to facilitate reproducibility, conda env file is provided besides the inference Docker files (see below).
+
 ## Inference on your data
 
 1. Build the docker image `docker build -t kneel_inference -f Dockerfile.xxx .`, where `xxx` is either `cpu` or `gpu`.
