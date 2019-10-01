@@ -51,7 +51,6 @@ dependencies:
   - pyqt=5.9.2=py37h05f1152_2
   - python=3.7.4=h265db76_1
   - python-dateutil=2.8.0=py37_0
-  - pytorch=1.1.0=py3.7_cuda10.0.130_cudnn7.5.1_0
   - pytz=2019.2=py_0
   - qt=5.9.7=h5867ecd_1
   - readline=7.0=h7b6447c_5
@@ -60,24 +59,30 @@ dependencies:
   - six=1.12.0=py37_0
   - sqlite=3.29.0=h7b6447c_0
   - tk=8.6.8=hbc83047_0
-  - torchvision=0.3.0=py37_cu10.0.130_1
   - tornado=6.0.3=py37h7b6447c_0
   - wheel=0.33.4=py37_0
   - xz=5.2.4=h14c3975_4
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.3.7=h0b5b093_0
+  - pytorch=1.1.0=py3.7_cuda10.0.130_cudnn7.5.1_0
+  - torchvision=0.3.0=py37_cu10.0.130_1
   - pip:
     - absl-py==0.8.0
     - astor==0.8.0
+    - click==7.0
     - deep-pipeline==0.2.5
+    - flask==1.1.1
     - gast==0.3.2
     - google-pasta==0.1.7
     - grpcio==1.23.0
     - h5py==2.10.0
+    - itsdangerous==1.1.0
+    - jinja2==2.10.1
     - joblib==0.13.2
     - keras-applications==1.0.8
     - keras-preprocessing==1.1.0
     - markdown==3.1.1
+    - markupsafe==1.1.1
     - mpmath==1.1.0
     - opencv-python==4.1.1.26
     - protobuf==3.9.1
@@ -92,6 +97,7 @@ dependencies:
     - tensorflow==1.14.0
     - tensorflow-estimator==1.14.0
     - termcolor==1.1.0
+    - torch==1.1.0
     - torchcontrib==0.0.2
     - tqdm==4.35.0
     - werkzeug==0.15.6
