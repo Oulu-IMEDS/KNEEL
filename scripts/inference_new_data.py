@@ -5,6 +5,7 @@ import numpy as np
 from kneel.inference.pipeline import KneeAnnotatorPipeline
 from tqdm import tqdm
 import cv2
+import logging
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
@@ -22,9 +23,12 @@ if __name__ == "__main__":
     parser.add_argument('--refine', type=bool, default=False)
     parser.add_argument('--mean_std_path', default='')
     args = parser.parse_args()
+    # Needed to silence the logger
+    logger = logging.getLogger('DummyLogger')
+    logger.setLevel(logging.ERROR)
 
     annotator = KneeAnnotatorPipeline(args.lc_snapshot_path, args.hc_snapshot_path,
-                                      args.mean_std_path, args.device)
+                                      args.mean_std_path, args.device, logger)
 
     imgs = glob.glob(os.path.join(args.dataset_path, args.dataset, '*'))
     imgs.sort()

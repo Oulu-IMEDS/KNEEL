@@ -76,6 +76,8 @@ def read_dicom(filename, spacing_none_mode=True):
             return None
     elif isinstance(filename, dicom.dataset.FileDataset):
         data = filename
+    else:
+        raise TypeError('Unknown type of the filename. Mightbe either string or pydicom.dataset.FileDataset.')
 
     img = np.frombuffer(data.PixelData, dtype=np.uint16).copy().astype(np.float64)
 
