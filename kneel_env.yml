@@ -73,7 +73,9 @@ dependencies:
     - deep-pipeline==0.2.5
     - flask==1.1.1
     - gast==0.3.2
+    - gevent==1.4.0
     - google-pasta==0.1.7
+    - greenlet==0.4.15
     - grpcio==1.23.0
     - h5py==2.10.0
     - itsdangerous==1.1.0
