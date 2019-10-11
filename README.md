@@ -103,6 +103,17 @@ docker run -it --name landmark_inference --rm \
 
 To perform the same on gpu, replace `cpu` to cuda in the command above and run the container with `nvidia-docker`:
 
+```
+nvidia-docker run -it --name landmark_inference --rm \
+            -v $(pwd)/snapshots_release:/snapshots/:ro \
+            -p 5000:5000 \
+            --ipc=host \
+            lextdocker/kneel:gpu python -u -m kneel.inference.app \
+            --lc_snapshot_path /snapshots/lext-devbox_2019_07_14_16_04_41 \
+            --hc_snapshot_path /snapshots/lext-devbox_2019_07_14_19_25_40 \
+            --refine True --mean_std_path /snapshots/mean_std.npy \
+            --deploy True --device cuda
+```
 
 ## License
 If you use the annotations from this work, you must cite the following paper (Accepted to ICCV 2019 VRMI Workshop)
