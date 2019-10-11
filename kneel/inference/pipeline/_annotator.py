@@ -39,7 +39,7 @@ class LandmarkAnnotator(object):
             net = init_model_from_args(snp_args)
             snp = torch.load(snp_name, map_location=device)['model']
             net.load_state_dict(snp)
-            models.append(net)
+            models.append(net.eval())
 
         self.net = NFoldInferenceModel(models).to(self.device)
         self.net.eval()

@@ -85,6 +85,23 @@ In the command above, you need to replace:
 You can fetch the prebuild docker images as `docker pull lextdocker/kneel:cpu` or `docker pull lextdocker/kneel:gpu` for CPU or GPU, respectively. 
 Please note that your NVIDIA driver must be compatible with cuda 10.
 
+## Running a flask micro-service 
+
+In addition to CLI inference, we also provide a flask micro-service allowing for integration of KNEEL into data processing pipeline.
+We have build support for this for both CPU and GPU. To execute the micro-service on cpu, run the following command:
+```
+docker run -it --name landmark_inference --rm \
+              -v $(pwd)/snapshots_release:/snapshots/:ro \
+              --ipc=host \
+              lextdocker/kneel:cpu python -u -m kneel.inference.app \
+              --lc_snapshot_path /snapshots/lext-devbox_2019_07_14_16_04_41 \
+              --hc_snapshot_path /snapshots/lext-devbox_2019_07_14_19_25_40 \
+              --refine True --mean_std_path /snapshots/mean_std.npy \
+              --deploy True --device cpu
+```
+
+To perform the same on gpu, 
+
 ## License
 If you use the annotations from this work, you must cite the following paper (Accepted to ICCV 2019 VRMI Workshop)
 
