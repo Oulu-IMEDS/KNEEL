@@ -19,6 +19,7 @@ ENV PATH=/opt/conda/bin:${PATH}
 # Installing the dependencies
 RUN pip install tqdm termcolor opencv-python torch==1.1.0 torchvision==0.3.0 pydicom sas7bdat matplotlib
 RUN pip install deep-pipeline==0.2.5 
+RUN pip install flask
 
 # Setting up the package
 RUN mkdir -p /opt/pkg/
