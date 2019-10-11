@@ -92,6 +92,7 @@ We have build support for this for both CPU and GPU. To execute the micro-servic
 ```
 docker run -it --name landmark_inference --rm \
               -v $(pwd)/snapshots_release:/snapshots/:ro \
+              -p 5000:5000 \
               --ipc=host \
               lextdocker/kneel:cpu python -u -m kneel.inference.app \
               --lc_snapshot_path /snapshots/lext-devbox_2019_07_14_16_04_41 \
@@ -100,7 +101,8 @@ docker run -it --name landmark_inference --rm \
               --deploy True --device cpu
 ```
 
-To perform the same on gpu, 
+To perform the same on gpu, replace `cpu` to cuda in the command above and run the container with `nvidia-docker`:
+
 
 ## License
 If you use the annotations from this work, you must cite the following paper (Accepted to ICCV 2019 VRMI Workshop)
