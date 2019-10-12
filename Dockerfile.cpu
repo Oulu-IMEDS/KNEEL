@@ -2,8 +2,7 @@ FROM ubuntu:18.04
 
 MAINTAINER Aleksei Tiulpin, University of Oulu, Version 1.0
 # Setting up the system
-RUN apt-get update
-RUN apt-get upgrade -y
+RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y --no-install-recommends curl locales ca-certificates libsm6 libxext6 libxrender-dev && rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen --purge en_US.UTF-8 && echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
@@ -17,10 +16,17 @@ RUN chmod +x ~/miniconda.sh && ~/miniconda.sh -b -p /opt/conda && rm ~/miniconda
 ENV PATH=/opt/conda/bin:${PATH}
 
 # Installing the dependencies
+RUN apt-get remove -y --auto-remove curl ca-certificates
 RUN conda install -y pytorch=1.1.0 torchvision=0.3.0 -c pytorch
 RUN conda install -y scikit-learn pandas tqdm termcolor sas7bdat matplotlib
+
 RUN pip install opencv-python==4.1.1.26 pydicom==1.3.0 flask==1.1.1 gevent==1.4.0 solt>=0.1.5  mpmath==1.1.0
 RUN pip install --no-deps deep-pipeline==0.2.5
+RUN conda clean -afy \
+    && find /opt/conda/ -follow -type f -name '*.a' -delete \
+    && find /opt/conda/ -follow -type f -name '*.pyc' -delete \
+    && find /opt/conda/ -follow -type f -name '*.js.map' -delete
+
 
 # Setting up the package
 RUN mkdir -p /opt/pkg/
