@@ -30,7 +30,7 @@ def visualize_landmarks(img, landmarks_t, landmarks_f, figsize=8, radius=3, save
         Makes and image plot with overlayed landmarks.
 
     """
-    if landmarks_f is not None:
+    if landmarks_t is not None:
         landmarks_t = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_t), color='red')
     if landmarks_f is not None:
         landmarks_f = PatchCollection(map(lambda x: Circle(x, radius=radius), landmarks_f), color='green')
