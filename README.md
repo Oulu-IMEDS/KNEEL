@@ -54,16 +54,15 @@ In order to facilitate reproducibility, conda env file is provided besides the i
 
 ## Inference on your data
 
-1. Build the docker image `docker build -t kneel_inference -f Dockerfile.xxx .`, where `xxx` is either `cpu` or `gpu`.
-2. Download the models: `sh fetch_snapshots.sh`
-3. Run the inference as follows (remember to use `nvidia-docker` for cuda support):
+1. Download the models: `sh fetch_snapshots.sh`
+2. Run the inference as follows (remember to use `nvidia-docker` tag `gpu` in the docker image for cuda support):
 
 ```
 docker run -it --name landmark_inference --rm \                                                                                                                                                               ✔  118  18:33:53
             -v <WORKDIR_LOCATION>:/workdir/ \
             -v $(pwd)/snapshots_release:/snapshots/:ro \
             -v <DATA_LOCATION>:/data/:ro --ipc=host \
-            kneel_inference python -u inference_new_data.py \
+            miptmloulu/kneel:cpu python -u inference_new_data.py \
             --dataset_path /data/ \
             --dataset <DATASET_NAME> \
             --workdir /workdir/ \
@@ -82,8 +81,8 @@ In the command above, you need to replace:
 * `<DATASET_NAME>` the name of the folder containing DICOM images. It should be a sub-folder of `<DATA_LOCATION>`.
 * `<DEVICE>` - `cuda`or `cpu` depending on the platform of execution and on how you built the docker image.
 
-You can fetch the prebuild docker images as `docker pull lextdocker/kneel:cpu` or `docker pull lextdocker/kneel:gpu` for CPU or GPU, respectively. 
-Please note that your NVIDIA driver must be compatible with cuda 10.
+Please note that your NVIDIA driver must be compatible with cuda 10. 
+You can also build the docker files yoruself if you want.
 
 ## Running a flask micro-service 
 
@@ -94,21 +93,21 @@ docker run -it --name landmark_inference --rm \
               -v $(pwd)/snapshots_release:/snapshots/:ro \
               -p 5000:5000 \
               --ipc=host \
-              lextdocker/kneel:cpu python -u -m kneel.inference.app \
+              miptmloulu/kneel:cpu python -u -m kneel.inference.app \
               --lc_snapshot_path /snapshots/lext-devbox_2019_07_14_16_04_41 \
               --hc_snapshot_path /snapshots/lext-devbox_2019_07_14_19_25_40 \
               --refine True --mean_std_path /snapshots/mean_std.npy \
               --deploy True --device cpu
 ```
 
-To perform the same on gpu, replace `cpu` to cuda in the command above and run the container with `nvidia-docker`:
+To perform the same on gpu, run the following with `nvidia-docker`:
 
 ```
 nvidia-docker run -it --name landmark_inference --rm \
             -v $(pwd)/snapshots_release:/snapshots/:ro \
             -p 5000:5000 \
             --ipc=host \
-            lextdocker/kneel:gpu python -u -m kneel.inference.app \
+            miptmloulu/kneel:gpu python -u -m kneel.inference.app \
             --lc_snapshot_path /snapshots/lext-devbox_2019_07_14_16_04_41 \
             --hc_snapshot_path /snapshots/lext-devbox_2019_07_14_19_25_40 \
             --refine True --mean_std_path /snapshots/mean_std.npy \
