@@ -18,17 +18,18 @@ app = Flask(__name__)
 # curl -F dicom=@01 -X POST http://127.0.0.1:5000/predict/bilateral
 @app.route('/predict/bilateral', methods=['POST'])
 def analyze_knee():
-    loggers['kneel-backend:app'].info('Received DICOM')
+    logger = logging.getLogger(f'kneel-backend:app')
+    logger.info('Received DICOM')
     raw = DicomBytesIO(request.files['dicom'].read())
     data = dcmread(raw)
-    loggers['kneel-backend:app'].info('DICOM read')
+    logger.info('DICOM read')
     landmarks = annotator.predict(data, args.roi_size_mm, args.pad, args.refine).squeeze()
-    loggers['kneel-backend:app'].info('Prediction successful')
+    logger.info('Prediction successful')
     if landmarks is not None:
         res = {'R': landmarks[0].tolist(), 'L': landmarks[1].tolist(), }
     else:
         res = {'R': None, 'L': None}
-    loggers['kneel-backend:app'].info('Sending results back to the user')
+    logger.info('Sending results back to the user')
     return jsonify(res)
 
 
@@ -41,26 +42,22 @@ if __name__ == '__main__':
     parser.add_argument('--device',  default='cuda')
     parser.add_argument('--refine', type=bool, default=False)
     parser.add_argument('--mean_std_path', default='')
-    parser.add_argument('--deploy_addr', default='0.0.0.0')
+    parser.add_argument('--addr', default='0.0.0.0')
+    parser.add_argument('--port', type=int, default=5000)
     parser.add_argument('--deploy', type=bool, default=False)
+    parser.add_argument('--jit_trace', type=bool, default=False)
     args = parser.parse_args()
 
-    loggers = {}
-
-    for logger_level in ['app', 'pipeline', 'roi-loc', 'landmarks-loc']:
-        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logger = logging.getLogger(f'kneel-backend:{logger_level}')
-        logger.setLevel(logging.DEBUG)
-
-        loggers[f'kneel-backend:{logger_level}'] = logger
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+    logger = logging.getLogger(f'kneel-backend:app')
 
     annotator = KneeAnnotatorPipeline(args.lc_snapshot_path, args.hc_snapshot_path,
-                                      args.mean_std_path, args.device, jit_trace=args.deploy, logger=loggers)
+                                      args.mean_std_path, args.device, jit_trace=args.jit_trace)
 
     if args.deploy:
-        http_server = WSGIServer((args.deploy_addr, 5000), app, log=logger)
-        loggers['kneel-backend:app'].log(logging.INFO, 'Production server is running')
+        http_server = WSGIServer((args.addr, args.port), app, log=logger)
+        logger.log(logging.INFO, f'Production server is running @ {args.addr}:{args.port}')
         http_server.serve_forever()
     else:
-        loggers['kneel-backend:app'].log(logging.INFO, 'Debug server is running')
-        app.run(host=args.deploy_addr, port=5000, debug=True)
+        logger.log(logging.INFO, f'Debug server is running @ {args.addr}:{args.port}')
+        app.run(host=args.addr, port=args.port, debug=True)

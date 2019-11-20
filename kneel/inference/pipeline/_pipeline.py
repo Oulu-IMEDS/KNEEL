@@ -4,31 +4,20 @@ from kneel.inference.pipeline import LandmarkAnnotator
 
 
 class KneeAnnotatorPipeline(object):
-    def __init__(self, lc_snapshot_path, hc_snapshot_path, mean_std_path, device, jit_trace=True, logger=None):
-        if logger is None:
-            logger = logging.Logger('KneeAnnotatorPipeline')
-            logger.setLevel(logging.DEBUG)
+    def __init__(self, lc_snapshot_path, hc_snapshot_path, mean_std_path, device, jit_trace=True):
 
-        if isinstance(logger, logging.Logger):
-            self.logger = logger
-            logger_lc = logger
-            logger_hc = logger
-        elif isinstance(logger, dict):
-            self.logger = logger['kneel-backend:pipeline']
-            logger_lc = logger['kneel-backend:roi-loc']
-            logger_hc = logger['kneel-backend:landmarks-loc']
-        else:
-            raise TypeError('Unknown logger type!')
+        self.logger = logging.getLogger(f'kneel-backend:pipeline')
+
         self.logger.log(logging.INFO, 'Initializing the global searcher (ROI localizer)')
         self.global_searcher = LandmarkAnnotator(snapshot_path=lc_snapshot_path,
                                                  mean_std_path=mean_std_path,
                                                  device=device, jit_trace=jit_trace,
-                                                 logger=logger_lc)
+                                                 logger=logging.getLogger(f'kneel-backend:roi-loc'))
         self.logger.log(logging.INFO, 'Initializing the local searcher (landmark localizer)')
         self.local_searcher = LandmarkAnnotator(snapshot_path=hc_snapshot_path,
                                                 mean_std_path=mean_std_path,
                                                 device=device, jit_trace=jit_trace,
-                                                logger=logger_hc)
+                                                logger=logging.getLogger(f'kneel-backend:landmark-annotator'))
 
     def predict(self, img_name, roi_size_mm=140, pad=300, refine=True):
         self.logger.log(logging.INFO, f'Loading the image with a new spacing of {self.global_searcher.img_spacing} mm.')
