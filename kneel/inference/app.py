@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--device',  default='cuda')
     parser.add_argument('--refine', type=bool, default=False)
     parser.add_argument('--mean_std_path', default='')
+    parser.add_argument('--deploy_addr', default='0.0.0.0')
     parser.add_argument('--deploy', type=bool, default=False)
     args = parser.parse_args()
 
@@ -57,9 +58,9 @@ if __name__ == '__main__':
                                       args.mean_std_path, args.device, jit_trace=args.deploy, logger=loggers)
 
     if args.deploy:
-        http_server = WSGIServer(('', 5000), app, log=logger)
+        http_server = WSGIServer((args.deploy_addr, 5000), app, log=logger)
         loggers['kneel-backend:app'].log(logging.INFO, 'Production server is running')
         http_server.serve_forever()
     else:
         loggers['kneel-backend:app'].log(logging.INFO, 'Debug server is running')
-        app.run(host='', port=5000, debug=True)
+        app.run(host=args.deploy_addr, port=5000, debug=True)
