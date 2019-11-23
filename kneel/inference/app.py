@@ -15,7 +15,7 @@ from kneel.inference.pipeline import KneeAnnotatorPipeline
 app = Flask(__name__)
 
 
-# curl -F dicom=@01 -X POST http://127.0.0.1:5000/predict/bilateral
+# curl -F dicom=@01 -X POST http://127.0.0.1:5000/kneel/predict/bilateral
 @app.route('/kneel/predict/bilateral', methods=['POST'])
 def analyze_knee():
     logger = logging.getLogger(f'kneel-backend:app')

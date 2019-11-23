@@ -114,6 +114,14 @@ nvidia-docker run -it --name landmark_inference --rm \
             --deploy True --device cuda
 ```
 
+Now, when teh microservice is deployed, it is fairly easy to get the landmarks using `curl`:
+
+```
+# curl -F dicom=@01 -X POST http://127.0.0.1:5000/kneel/predict/bilateral
+```
+
+Here, `01` is the filename of teh DICOM image.
+
 ## License
 If you use the annotations from this work, you must cite the following paper (Accepted to ICCV 2019 VRMI Workshop)
 
