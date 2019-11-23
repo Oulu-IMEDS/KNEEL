@@ -3,8 +3,8 @@ FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 MAINTAINER Aleksei Tiulpin, University of Oulu, Version 1.0
 
 RUN apt-get update && apt-get upgrade -y
+RUN apt-get -o Dpkg::Options::="--force-confmiss" install --reinstall netbase
 RUN apt-get install -y --no-install-recommends curl locales ca-certificates libsm6 libxext6 libxrender-dev && rm -rf /var/lib/apt/lists/*
-
 RUN locale-gen --purge en_US.UTF-8 && echo -e 'LANG="en_US.UTF-8"\nLANGUAGE="en_US:en"\n' > /etc/default/locale
 
 # Making sure that the locales are correctly installed
