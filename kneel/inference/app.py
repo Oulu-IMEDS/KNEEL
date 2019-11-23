@@ -9,7 +9,7 @@ from gevent.pywsgi import WSGIServer
 from pydicom import dcmread
 from pydicom.filebase import DicomBytesIO
 import logging
-
+from logging import handlers
 from kneel.inference.pipeline import KneeAnnotatorPipeline
 
 app = Flask(__name__)
@@ -46,9 +46,12 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=5000)
     parser.add_argument('--deploy', type=bool, default=False)
     parser.add_argument('--jit_trace', type=bool, default=False)
+    parser.add_argument('--logs', default='/tmp/kneel.log')
     args = parser.parse_args()
 
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+    logging.basicConfig(filename=args.logs, filemode='a',
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+
     logger = logging.getLogger(f'kneel-backend:app')
 
     annotator = KneeAnnotatorPipeline(args.lc_snapshot_path, args.hc_snapshot_path,
