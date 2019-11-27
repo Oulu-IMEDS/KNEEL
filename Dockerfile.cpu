@@ -24,8 +24,6 @@ RUN conda install -y scikit-learn pandas tqdm termcolor sas7bdat matplotlib
 RUN pip install opencv-python==4.1.1.26 pydicom==1.3.0 flask==1.1.1 gevent==1.4.0 solt>=0.1.5  mpmath==1.1.0
 RUN pip install --no-deps deep-pipeline==0.2.5
 
-RUN pip install python-socketio==4.3.1 eventlet==0.25.1
-
 RUN conda clean -afy \
     && find /opt/conda/ -follow -type f -name '*.a' -delete \
     && find /opt/conda/ -follow -type f -name '*.pyc' -delete \
