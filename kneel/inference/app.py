@@ -11,16 +11,17 @@ from pydicom.filebase import DicomBytesIO
 import logging
 from logging import handlers
 from kneel.inference.pipeline import KneeAnnotatorPipeline
-
+import base64
 app = Flask(__name__)
 
 
-# curl -F dicom=@01 -X POST http://127.0.0.1:5000/kneel/predict/bilateral
 @app.route('/kneel/predict/bilateral', methods=['POST'])
 def analyze_knee():
     logger = logging.getLogger(f'kneel-backend:app')
     logger.info('Received DICOM')
-    raw = DicomBytesIO(request.files['dicom'].read())
+    dicom_base64 = request.get_json(force=True)['dicom']
+    dicom_binary = base64.b64decode(dicom_base64)
+    raw = DicomBytesIO(dicom_binary)
     data = dcmread(raw)
     logger.info('DICOM read')
     landmarks = annotator.predict(data, args.roi_size_mm, args.pad, args.refine).squeeze()
