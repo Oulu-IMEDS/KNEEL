@@ -19,6 +19,14 @@ def convert_img(img):
 
     return img
 
+def isfloat(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
 
 def read_pts(fname):
     with open(fname) as f:
